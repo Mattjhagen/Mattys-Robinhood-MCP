@@ -43,3 +43,7 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
+
+# Runtime financial state (never publish)
+runtime/
+strategy-policy.local.json

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "mode": "autonomous_after_preflight",
+  "account_id": null,
+  "objective": "Seek growth after costs within user-selected risk and liquidity limits; never promise returns",
+  "risk_preference": "aggressive_growth_large_losses_accepted",
+  "investment_horizon": "unspecified_with_occasional_small_withdrawals",
+  "allowed_symbols": [],
+  "allow_margin_borrowing": false,
+  "allow_options": false,
+  "allow_short_selling": false,
+  "allow_leveraged_products": false,
+  "allow_crypto_new_buys": true,
+  "allow_transfers": false,
+  "budget": {
+    "reserve_fraction": "0.10",
+    "max_cycle_fraction": "0.25",
+    "minimum_order": "1.00",
+    "fee_buffer": "0.05"
+  },
+  "max_new_buy_orders_per_day": 1,
+  "rebalance_drift_percentage_points": "5.00",
+  "max_snapshot_age_seconds": 60,
+  "max_quote_age_seconds": 30,
+  "notes": [
+    "Use the stricter of broker and policy minimums and limits.",
+    "The fee buffer is a placeholder; replace with the current preview cost and slippage reserve if higher.",
+    "Policy is interpreted by Claude; it is not enforced by the broker or calculator.",
+    "Risk preference supplied by user; numeric limits are conservative engineering defaults, not validated return optimization. Autonomous mode requires the preflight in STRATEGY.md; no live session is configured by this file alone."
+  ],
+  "allowed_universe": [
+    "Unleveraged liquid exchange-listed equities and ETFs verified tradable in the Agentic account",
+    "Liquid spot crypto pairs verified tradable in the Agentic account"
+  ],
+  "max_position_fraction": "0.50",
+  "max_crypto_fraction": "0.50",
+  "max_positions_below_100": 2
+}

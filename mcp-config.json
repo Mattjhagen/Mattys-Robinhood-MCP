@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "robinhood-trading": {
+      "type": "http",
+      "url": "https://agent.robinhood.com/mcp/trading",
+      "description": "Official Robinhood MCP server for agentic trading"
+    },
+    "robinhood-mcp-readonly": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "robinhood-mcp"
+      ],
+      "env": {},
+      "description": "Read-only Robinhood MCP server via npm package (alternative)"
+    }
+  }
+}

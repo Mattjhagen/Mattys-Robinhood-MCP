@@ -1,0 +1,45 @@
+# Sensitive credentials
+*.key
+*.pem
+*.env
+.env.local
+credentials.json
+auth-tokens.json
+
+# Personal account data
+account-details.json
+personal-portfolio.json
+
+# Claude Code cache
+.claude/
+*.cache
+
+# Logs
+*.log
+logs/
+
+# Node modules (if using npm package)
+node_modules/
+package-lock.json
+
+# Python virtual environments
+venv/
+.venv/
+*.pyc
+__pycache__/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Backup files
+*.bak
+*.backup

@@ -1,0 +1,101 @@
+{
+  "snapshot_date": "2026-09-21",
+  "account": {
+    "account_number": "444812903",
+    "nickname": "Agentic",
+    "type": "limited_margin",
+    "brokerage_account_type": "individual",
+    "agentic_allowed": true,
+    "state": "active"
+  },
+  "portfolio": {
+    "total_value": "21.85",
+    "breakdown": {
+      "crypto_value": "21.66",
+      "cash": "0.19"
+    },
+    "buying_power": "0.19"
+  },
+  "alerts": [
+    {
+      "asset": "BTC",
+      "display_name": "Bitcoin",
+      "condition": "price_above",
+      "target_price": "5",
+      "enabled": true
+    },
+    {
+      "asset": "BTC",
+      "display_name": "Bitcoin",
+      "condition": "price_below",
+      "target_price": "5",
+      "enabled": true
+    },
+    {
+      "asset": "ETH",
+      "display_name": "Ethereum",
+      "condition": "price_above",
+      "target_price": "5",
+      "enabled": true
+    },
+    {
+      "asset": "ETH",
+      "display_name": "Ethereum",
+      "condition": "price_below",
+      "target_price": "5",
+      "enabled": true
+    },
+    {
+      "asset": "DOGE",
+      "display_name": "Dogecoin",
+      "condition": "price_above",
+      "target_price": "0.1",
+      "enabled": true
+    },
+    {
+      "asset": "DOGE",
+      "display_name": "Dogecoin",
+      "condition": "price_below",
+      "target_price": "0.1",
+      "enabled": true
+    }
+  ],
+  "watchlists": [
+    {
+      "name": "Currently Trading",
+      "icon": "💡",
+      "type": "custom",
+      "item_count": 3
+    },
+    {
+      "name": "My First List",
+      "icon": "⚡",
+      "type": "custom",
+      "item_count": 19
+    },
+    {
+      "name": "Cryptos to Watch",
+      "icon": "👾",
+      "type": "custom",
+      "item_count": 1
+    },
+    {
+      "name": "Options Watchlist",
+      "icon": "💡",
+      "type": "custom",
+      "item_count": 0
+    }
+  ],
+  "followed_curated_lists": [
+    "Tradable crypto",
+    "Newly listed crypto",
+    "Futures",
+    "Stock Lending 7%"
+  ],
+  "notes": [
+    "Alerts are set at test threshold prices ($5 for BTC/ETH, $0.10 for DOGE)",
+    "Portfolio is primarily crypto holdings with minimal cash",
+    "Advanced orders not yet enabled for this account",
+    "Options watchlist is empty - options trading may not be enabled"
+  ]
+}

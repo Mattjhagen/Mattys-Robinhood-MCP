@@ -1,253 +1,86 @@
-# Installation Guide
+# Claude Code installation
 
-## Prerequisites
+## Connect the official server
 
-- Claude Code installed (CLI, desktop, or web)
-- Robinhood account with agentic trading enabled
-- Basic familiarity with JSON configuration files
+Open Claude Code CLI in this repository. It reads the project `.mcp.json` after
+project/server trust approval. Authenticate the `robinhood-trading` server with
+`/mcp`. Do not paste tokens into files or commit authentication state.
 
-## Step-by-Step Setup
+Alternatively, register the same server with the CLI (do not create duplicate
+connections if this project's server is already loaded):
 
-### 1. Install Claude Code
-
-If you haven't already, install Claude Code:
-
-**macOS/Linux:**
-```bash
-curl -fsSL https://claude.com/install.sh | sh
+```sh
+claude mcp add --transport http robinhood-trading https://agent.robinhood.com/mcp/trading
 ```
 
-**Or download from:**
-- [Claude Code Desktop](https://claude.com/download)
-- Use the web version at [claude.ai/code](https://claude.ai/code)
+Robinhood's desktop authentication flow handles Agentic account onboarding. Verify
+the account returned by `get_accounts`; do not rely on a nickname or historical
+snapshot. The MCP can read other Robinhood accounts, but trading is restricted to
+the Agentic account. Crypto has separate eligibility requirements.
 
-### 2. Locate Your Claude Configuration
+For Claude Desktop, use Settings → Connectors → Add custom connector with the
+same URL. Project CLAUDE.md instructions and CLI settings do not automatically
+apply to Desktop; this repository's workflow is designed for Claude Code CLI.
 
-Claude's configuration is stored in:
-- **Linux/macOS**: `~/.claude.json`
-- **Windows**: `%USERPROFILE%\.claude.json`
+## Verify without trading
 
-### 3. Add Robinhood MCP Server
+Ask Claude to read CLAUDE.md and run STRATEGY.md's proposal-only preflight. This
+checks tool schemas, cash definitions, account eligibility, pending orders and
+withdrawals, and portfolio limits. Missing cash/transfer information means HOLD.
+Store bound account IDs, snapshots, and journals only under ignored runtime/.
 
-Edit your `~/.claude.json` file and add the Robinhood MCP server to the `mcpServers` section:
+The removed third-party npm server was not the official endpoint. A package name
+or descriptive label does not establish read-only access. Use the official
+connection with appropriate client permissions.
 
-```json
-{
-  "mcpServers": {
-    "robinhood-trading": {
-      "type": "http",
-      "url": "https://agent.robinhood.com/mcp/trading"
-    }
-  }
-}
-```
+## Permissions
 
-If you already have other MCP servers configured, add the Robinhood configuration alongside them:
-
-```json
-{
-  "mcpServers": {
-    "github": {
-      "type": "http",
-      "url": "https://api.github.com/mcp"
-    },
-    "robinhood-trading": {
-      "type": "http",
-      "url": "https://agent.robinhood.com/mcp/trading"
-    }
-  }
-}
-```
-
-### 4. Restart Claude Code
-
-After modifying the configuration:
-- CLI: Exit and restart `claude`
-- Desktop: Quit and reopen the application
-- Web: Refresh the page
-
-### 5. Authenticate with Robinhood
-
-In Claude Code, run:
-```
-/mcp
-```
-
-This will:
-1. Show you available MCP servers
-2. Allow you to authenticate with Robinhood
-3. Grant Claude access to your account
-
-Follow the authentication prompts to log in with your Robinhood credentials.
-
-### 6. Enable Agentic Trading
-
-**Important**: You must explicitly enable agentic trading on your Robinhood account:
-
-1. Log into [robinhood.com](https://robinhood.com)
-2. Go to **Account** → **Settings**
-3. Find **Agentic Trading** section
-4. Enable it for the account you want to use
-5. Review and accept the terms
-6. Set any trading limits or restrictions
-
-### 7. Verify Setup
-
-Test your configuration by asking Claude:
-
-```
-Check my Robinhood account status
-```
-
-You should see your account details, portfolio value, and buying power.
-
-## Alternative Setup: Read-Only Mode
-
-If you want Claude to only read data (no trading), use the npm package instead:
-
-### Install the Package
-
-```bash
-npm install -g robinhood-mcp
-```
-
-### Configure in Claude
-
-```json
-{
-  "mcpServers": {
-    "robinhood-mcp-readonly": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["robinhood-mcp"],
-      "env": {}
-    }
-  }
-}
-```
-
-This provides read-only access to:
-- Portfolio data
-- Market quotes
-- Historical data
-- News and research
-
-But does NOT allow:
-- Placing trades
-- Creating/modifying alerts
-- Managing watchlists
-
-## Troubleshooting
-
-### MCP Server Not Showing Up
-
-**Check your JSON syntax:**
-```bash
-# Validate your config file
-cat ~/.claude.json | python3 -m json.tool
-```
-
-If you see errors, fix the JSON syntax and restart Claude Code.
-
-### Authentication Failing
-
-1. **Check Robinhood service status**: Visit [status.robinhood.com](https://status.robinhood.com)
-2. **Clear authentication cache**: 
-   ```bash
-   rm ~/.claude/mcp-needs-auth-cache.json
-   ```
-3. **Try authenticating again**: Run `/mcp` in Claude Code
-
-### "Account not agentic-enabled" Error
-
-This means your account doesn't have agentic trading enabled:
-
-1. Log into Robinhood on web/mobile
-2. Navigate to Account Settings → Agentic Trading
-3. Enable agentic trading
-4. Wait a few minutes for the change to propagate
-5. Try again in Claude Code
-
-### Permission Denied for Trading
-
-Your account might have trading restrictions:
-
-1. **Check account type**: Some account types don't support certain trades
-2. **Verify buying power**: Run `get_portfolio` to check available funds
-3. **Review trading limits**: Check your agentic trading settings
-4. **Pattern day trader status**: If flagged as PDT, you may have limitations
-
-### MCP Connection Timeout
-
-1. **Check internet connection**
-2. **Verify URL is correct**: `https://agent.robinhood.com/mcp/trading`
-3. **Check firewall settings**: Ensure Claude can make outbound HTTPS connections
-4. **Try alternative configuration**: Use the stdio/npm version if HTTP isn't working
-
-## Configuration Options
-
-### Setting Trading Limits
-
-In your Robinhood agentic trading settings, you can set:
-
-- **Max order size**: Maximum dollar amount per trade
-- **Daily trade limit**: Maximum number of trades per day
-- **Allowed asset classes**: Stocks, crypto, options, etc.
-- **Restricted symbols**: Symbols that cannot be traded
-- **Time restrictions**: Trading hours limitations
-
-### Claude Code Permissions
-
-You can configure Claude Code to require approval for certain actions:
-
-Edit `~/.claude/settings.local.json`:
+Normal Claude Code permission prompts remain in effect. The repository does not
+install broad automatic write permissions. To insist on approval for every order
+mutation, merge this example into `.claude/settings.local.json` while preserving
+existing settings (the supported key is `ask`, not `prompt`):
 
 ```json
 {
   "permissions": {
-    "allow": [],
-    "deny": [],
-    "prompt": [
-      "mcp__robinhood-trading__place_*"
+    "ask": [
+      "mcp__robinhood-trading__place_*",
+      "mcp__robinhood-trading__cancel_*"
     ]
   }
 }
 ```
 
-This will make Claude ask for permission before placing any trades.
+Check actual canonical tool names in your session; connector namespaces may
+differ. Ask rules win over allow rules. These are tool approval settings, not
+cash/position constraints. Do not use `--dangerously-skip-permissions` to automate
+trading. Do not assume Robinhood offers every custom limit from strategy-policy.
 
-## Security Best Practices
+The user's autonomous mandate is recorded in the policy. To run without per-order
+prompts later, the host must grant only the specific validated tools needed by a
+runner that meets STRATEGY.md's runtime requirements. This repo does not supply
+that runner or silently alter your global permissions.
 
-1. ✅ **Enable 2FA** on your Robinhood account
-2. ✅ **Set conservative trading limits** initially
-3. ✅ **Monitor trades** in the Robinhood app
-4. ✅ **Review agentic trading logs** regularly
-5. ✅ **Start with paper trading** if available
-6. ✅ **Use a separate account** for agentic trading
-7. ❌ **Never share your authentication tokens**
-8. ❌ **Don't commit credentials to git**
+## Validate offline
 
-## Next Steps
+Python 3.9+; no dependencies or broker credentials required:
 
-After installation:
+```sh
+python3 -m unittest discover -s tests -v
+python3 scripts/budget.py examples/balance-20.json
+```
 
-1. **Review the main [README.md](README.md)** for usage examples
-2. **Check [current-config-snapshot.json](current-config-snapshot.json)** for the current setup
-3. **Explore available MCP tools** by asking Claude "What Robinhood tools are available?"
-4. **Set up alerts and watchlists** for assets you want to monitor
+Before live use, exercise stale data, pending withdrawals, partial fills,
+concurrent runs, and ambiguous submission responses in a broker-adapter test
+harness. The included tests cover cash math only, not live integration or returns.
 
-## Support
+## Operation and stopping
 
-For issues:
-- **Claude Code**: [github.com/anthropics/claude-code/issues](https://github.com/anthropics/claude-code/issues)
-- **Robinhood MCP**: Check Robinhood's agent documentation
-- **This Config**: Open an issue in this repository
+A CLI must be invoked and authenticated to perform a cycle. There is no installed
+scheduler or instant transfer listener. After deposits/withdrawals, request a
+fresh reconciliation. Scheduled work must hold an exclusive account lock and
+persist orders before submission; without those facilities use proposals only.
 
-## Updates
-
-This repository will be updated as:
-- New features are added to the Robinhood MCP
-- Configuration best practices evolve
-- Issues and fixes are discovered
-
-Watch this repo for updates!
+Stop the runner to prevent new calls, then inspect outstanding broker orders.
+Stopping Claude does not cancel orders. Reauthenticate with `/mcp` if needed;
+do not delete undocumented authentication files or switch to an unverified server.

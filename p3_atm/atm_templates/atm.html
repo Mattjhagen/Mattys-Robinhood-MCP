@@ -551,6 +551,75 @@
 
                 <button class="back-btn" onclick="showScreen('menu-screen')">← Back to Menu</button>
             </div>
+
+            <!-- Transfer/Deposit Screen -->
+            <div id="transfer-screen" class="screen">
+                <div class="screen-title">Transfers & Banking</div>
+
+                <div style="text-align: center; font-size: 1.1em; color: #00ff00; margin-bottom: 20px;">
+                    Available: <span id="transfer-balance">$0.00</span>
+                </div>
+
+                <!-- Transfer Type Selection -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                    <button id="deposit-tab" class="menu-btn" onclick="showTransferType('deposit')" style="padding: 15px;">
+                        <div style="font-size: 1.2em;">⬇️ DEPOSIT</div>
+                    </button>
+                    <button id="withdraw-tab" class="menu-btn" onclick="showTransferType('withdraw')" style="padding: 15px;">
+                        <div style="font-size: 1.2em;">⬆️ WITHDRAW</div>
+                    </button>
+                </div>
+
+                <!-- Deposit Form -->
+                <div id="deposit-form" style="display: none;">
+                    <div style="background: rgba(0, 255, 0, 0.1); border: 2px solid #00ff00; border-radius: 10px; padding: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #00ff00; margin-bottom: 5px;">Deposit From:</label>
+                            <select id="deposit-source" style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #00ff00;
+                                   border-radius: 5px; background: rgba(0,0,0,0.3); color: #00ff00;">
+                                <option value="bank">Linked Bank Account</option>
+                                <option value="checking">Robinhood Checking</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #00ff00; margin-bottom: 5px;">Amount (USD):</label>
+                            <input type="number" id="deposit-amount" placeholder="0.00" step="0.01" min="0"
+                                   style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #00ff00;
+                                          border-radius: 5px; background: rgba(0,0,0,0.3); color: #00ff00;">
+                        </div>
+                        <button onclick="executeDeposit()" class="menu-btn" style="width: 100%; background: linear-gradient(180deg, #00ff00 0%, #00cc00 100%); border-color: #00ff00; color: #000000;">
+                            <div style="font-size: 1.2em;">✓ Execute Deposit</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Withdraw Form -->
+                <div id="withdraw-form" style="display: none;">
+                    <div style="background: rgba(255, 165, 0, 0.1); border: 2px solid #ffa500; border-radius: 10px; padding: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #00ff00; margin-bottom: 5px;">Withdraw To:</label>
+                            <select id="withdraw-destination" style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #ffa500;
+                                   border-radius: 5px; background: rgba(0,0,0,0.3); color: #00ff00;">
+                                <option value="bank">Linked Bank Account</option>
+                                <option value="checking">Robinhood Checking</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #00ff00; margin-bottom: 5px;">Amount (USD):</label>
+                            <input type="number" id="withdraw-amount" placeholder="0.00" step="0.01" min="0"
+                                   style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #ffa500;
+                                          border-radius: 5px; background: rgba(0,0,0,0.3); color: #00ff00;">
+                        </div>
+                        <button onclick="executeWithdraw()" class="menu-btn" style="width: 100%; background: linear-gradient(180deg, #ffa500 0%, #ff8c00 100%); border-color: #ffa500; color: #000000;">
+                            <div style="font-size: 1.2em;">✓ Execute Withdrawal</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="transfer-message" style="margin-top: 20px;"></div>
+
+                <button class="back-btn" onclick="showScreen('menu-screen')">← Back to Menu</button>
+            </div>
         </div>
     </div>
 
@@ -810,20 +879,38 @@
                 return;
             }
 
-            showTradeMessage('Processing buy order...', 'info');
+            showTradeMessage('Processing buy order through Robinhood MCP...', 'info');
 
-            // Placeholder for actual API call
-            // In production, this would call the Robinhood MCP
-            setTimeout(() => {
-                showTradeMessage(
-                    `✓ Buy order simulated: $${amount.toFixed(2)} of ${symbol}<br>` +
-                    `<small>In production, this will execute through Robinhood MCP</small>`,
-                    'success'
-                );
-                // Clear form
-                document.getElementById('buy-symbol').value = '';
-                document.getElementById('buy-amount').value = '';
-            }, 1500);
+            try {
+                const response = await fetch('/api/trade/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol, amount })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showTradeMessage(
+                        `✓ Buy order executed: $${amount.toFixed(2)} of ${symbol}<br>` +
+                        `<small>${data.message || 'Order submitted to Robinhood'}</small>`,
+                        'success'
+                    );
+                    // Clear form
+                    document.getElementById('buy-symbol').value = '';
+                    document.getElementById('buy-amount').value = '';
+                    // Refresh balance
+                    updateQuickBalance();
+                } else {
+                    showTradeMessage(
+                        `✗ Buy order failed<br><small>${data.error || data.message}</small>`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showTradeMessage('Connection error. Please try again.', 'error');
+                console.error('Buy error:', error);
+            }
         }
 
         async function executeSell() {
@@ -835,19 +922,38 @@
                 return;
             }
 
-            showTradeMessage('Processing sell order...', 'info');
+            showTradeMessage('Processing sell order through Robinhood MCP...', 'info');
 
-            // Placeholder for actual API call
-            setTimeout(() => {
-                showTradeMessage(
-                    `✓ Sell order simulated: ${quantity} ${symbol}<br>` +
-                    `<small>In production, this will execute through Robinhood MCP</small>`,
-                    'success'
-                );
-                // Clear form
-                document.getElementById('sell-symbol').value = '';
-                document.getElementById('sell-quantity').value = '';
-            }, 1500);
+            try {
+                const response = await fetch('/api/trade/sell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol, quantity })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showTradeMessage(
+                        `✓ Sell order executed: ${quantity} ${symbol}<br>` +
+                        `<small>${data.message || 'Order submitted to Robinhood'}</small>`,
+                        'success'
+                    );
+                    // Clear form
+                    document.getElementById('sell-symbol').value = '';
+                    document.getElementById('sell-quantity').value = '';
+                    // Refresh balance
+                    updateQuickBalance();
+                } else {
+                    showTradeMessage(
+                        `✗ Sell order failed<br><small>${data.error || data.message}</small>`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showTradeMessage('Connection error. Please try again.', 'error');
+                console.error('Sell error:', error);
+            }
         }
 
         function showTradeMessage(message, type) {
@@ -855,6 +961,140 @@
             const className = type === 'error' ? 'error-message' :
                             type === 'success' ? 'success-message' : 'info-text';
             msgEl.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        async function showTransferScreen() {
+            showScreen('transfer-screen');
+            // Load balance
+            try {
+                const response = await fetch('/api/balance');
+                const data = await response.json();
+                document.getElementById('transfer-balance').textContent =
+                    `$${data.total_value.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+            }
+            // Default to deposit form
+            showTransferType('deposit');
+        }
+
+        function showTransferType(type) {
+            // Reset forms
+            document.getElementById('deposit-form').style.display = 'none';
+            document.getElementById('withdraw-form').style.display = 'none';
+            document.getElementById('transfer-message').innerHTML = '';
+
+            // Update tab styling
+            document.getElementById('deposit-tab').style.background =
+                type === 'deposit' ? 'linear-gradient(180deg, #00ff00 0%, #00cc00 100%)' : '';
+            document.getElementById('deposit-tab').style.color = type === 'deposit' ? '#000000' : '#00ff00';
+            document.getElementById('withdraw-tab').style.background =
+                type === 'withdraw' ? 'linear-gradient(180deg, #ffa500 0%, #ff8c00 100%)' : '';
+            document.getElementById('withdraw-tab').style.color = type === 'withdraw' ? '#000000' : '#00ff00';
+
+            // Show selected form
+            if (type === 'deposit') {
+                document.getElementById('deposit-form').style.display = 'block';
+                document.getElementById('deposit-amount').focus();
+            } else {
+                document.getElementById('withdraw-form').style.display = 'block';
+                document.getElementById('withdraw-amount').focus();
+            }
+        }
+
+        async function executeDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const source = document.getElementById('deposit-source').value;
+
+            if (!amount || amount <= 0) {
+                showTransferMessage('Please enter a valid amount', 'error');
+                return;
+            }
+
+            const sourceName = source === 'checking' ? 'Robinhood Checking' : 'Linked Bank Account';
+            showTransferMessage(`Processing deposit from ${sourceName}...`, 'info');
+
+            try {
+                const response = await fetch('/api/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, source })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showTransferMessage(
+                        `✓ Deposit initiated: $${amount.toFixed(2)} from ${sourceName}<br>` +
+                        `<small>${data.message || 'Transfer submitted to Robinhood'}</small>`,
+                        'success'
+                    );
+                    document.getElementById('deposit-amount').value = '';
+                    updateQuickBalance();
+                } else {
+                    showTransferMessage(
+                        `✗ Deposit failed<br><small>${data.error || data.message}</small>`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showTransferMessage('Connection error. Please try again.', 'error');
+                console.error('Deposit error:', error);
+            }
+        }
+
+        async function executeWithdraw() {
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const destination = document.getElementById('withdraw-destination').value;
+
+            if (!amount || amount <= 0) {
+                showTransferMessage('Please enter a valid amount', 'error');
+                return;
+            }
+
+            const destName = destination === 'checking' ? 'Robinhood Checking' : 'Linked Bank Account';
+            showTransferMessage(`Processing withdrawal to ${destName}...`, 'info');
+
+            try {
+                const response = await fetch('/api/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, destination })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showTransferMessage(
+                        `✓ Withdrawal initiated: $${amount.toFixed(2)} to ${destName}<br>` +
+                        `<small>${data.message || 'Transfer submitted to Robinhood'}</small>`,
+                        'success'
+                    );
+                    document.getElementById('withdraw-amount').value = '';
+                    updateQuickBalance();
+                } else {
+                    showTransferMessage(
+                        `✗ Withdrawal failed<br><small>${data.error || data.message}</small>`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showTransferMessage('Connection error. Please try again.', 'error');
+                console.error('Withdraw error:', error);
+            }
+        }
+
+        function showTransferMessage(message, type) {
+            const msgEl = document.getElementById('transfer-message');
+            const className = type === 'error' ? 'error-message' :
+                            type === 'success' ? 'success-message' : 'info-text';
+            msgEl.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        function showWithdrawScreen() {
+            showTransferScreen();
+            // Auto-switch to withdraw tab
+            setTimeout(() => showTransferType('withdraw'), 100);
         }
 
         async function logout() {
@@ -965,7 +1205,13 @@
                 } else if (e.key === '3') {
                     e.preventDefault();
                     showTradeScreen();
-                } else if (e.key === '4' || e.key === 'Escape') {
+                } else if (e.key === '4') {
+                    e.preventDefault();
+                    showTransferScreen();
+                } else if (e.key === '5') {
+                    e.preventDefault();
+                    showWithdrawScreen();
+                } else if (e.key === '6' || e.key === 'Escape') {
                     e.preventDefault();
                     logout();
                 }
@@ -979,6 +1225,20 @@
                 } else if (e.key === 's' || e.key === 'S') {
                     e.preventDefault();
                     showTradeType('sell');
+                } else if (e.key === 'Escape' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    showScreen('menu-screen');
+                }
+            }
+
+            // Transfer screen - D for deposit, W for withdraw
+            else if (activeScreen.id === 'transfer-screen') {
+                if (e.key === 'd' || e.key === 'D') {
+                    e.preventDefault();
+                    showTransferType('deposit');
+                } else if (e.key === 'w' || e.key === 'W') {
+                    e.preventDefault();
+                    showTransferType('withdraw');
                 } else if (e.key === 'Escape' || e.key === 'Backspace') {
                     e.preventDefault();
                     showScreen('menu-screen');

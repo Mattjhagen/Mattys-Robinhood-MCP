@@ -7,6 +7,8 @@ Web-based ATM interface with backend API
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import json
 import os
+import subprocess
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -141,6 +143,183 @@ def get_status():
         'institution': 'P3 Lending Inc',
         'timestamp': datetime.now().isoformat(),
         'session': session.to_dict()
+    })
+
+def execute_claude_command(command):
+    """
+    Execute a command through Claude CLI with Robinhood MCP
+    Returns the output or error message
+    """
+    try:
+        # Create a temporary file with the command
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            f.write(command)
+            temp_file = f.name
+
+        # Execute Claude CLI with the command
+        # Using subprocess to run: echo "<command>" | claude
+        result = subprocess.run(
+            ['claude'],
+            input=command.encode(),
+            capture_output=True,
+            timeout=60,
+            cwd=str(Path.home() / 'Mattys-Robinhood-MCP')
+        )
+
+        # Clean up temp file
+        try:
+            os.unlink(temp_file)
+        except:
+            pass
+
+        output = result.stdout.decode('utf-8')
+        error = result.stderr.decode('utf-8')
+
+        if result.returncode == 0:
+            return {
+                'success': True,
+                'output': output,
+                'error': None
+            }
+        else:
+            return {
+                'success': False,
+                'output': output,
+                'error': error or 'Command failed'
+            }
+    except subprocess.TimeoutExpired:
+        return {
+            'success': False,
+            'output': '',
+            'error': 'Command timed out after 60 seconds'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'output': '',
+            'error': str(e)
+        }
+
+@app.route('/api/trade/buy', methods=['POST'])
+def trade_buy():
+    """Execute a buy order through Robinhood MCP"""
+    if not session.authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.json
+    symbol = data.get('symbol', '').upper()
+    amount = data.get('amount', 0)
+
+    if not symbol or amount <= 0:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid symbol or amount'
+        })
+
+    # Create command for Claude CLI
+    command = f"Buy ${amount:.2f} worth of {symbol} on my agentic Robinhood account"
+
+    # Execute the command
+    result = execute_claude_command(command)
+
+    return jsonify({
+        'success': result['success'],
+        'message': result['output'] if result['success'] else result['error'],
+        'symbol': symbol,
+        'amount': amount
+    })
+
+@app.route('/api/trade/sell', methods=['POST'])
+def trade_sell():
+    """Execute a sell order through Robinhood MCP"""
+    if not session.authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.json
+    symbol = data.get('symbol', '').upper()
+    quantity = data.get('quantity', 0)
+
+    if not symbol or quantity <= 0:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid symbol or quantity'
+        })
+
+    # Create command for Claude CLI
+    command = f"Sell {quantity} {symbol} from my agentic Robinhood account"
+
+    # Execute the command
+    result = execute_claude_command(command)
+
+    return jsonify({
+        'success': result['success'],
+        'message': result['output'] if result['success'] else result['error'],
+        'symbol': symbol,
+        'quantity': quantity
+    })
+
+@app.route('/api/withdraw', methods=['POST'])
+def withdraw():
+    """Withdraw funds to linked bank account"""
+    if not session.authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.json
+    amount = data.get('amount', 0)
+    destination = data.get('destination', 'bank')  # 'bank' or 'checking'
+
+    if amount <= 0:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid amount'
+        })
+
+    # Create command for Claude CLI
+    if destination == 'checking':
+        command = f"Transfer ${amount:.2f} from my Robinhood brokerage account to my Robinhood checking account"
+    else:
+        command = f"Withdraw ${amount:.2f} from my Robinhood account to my linked bank account"
+
+    # Execute the command
+    result = execute_claude_command(command)
+
+    return jsonify({
+        'success': result['success'],
+        'message': result['output'] if result['success'] else result['error'],
+        'amount': amount,
+        'destination': destination
+    })
+
+@app.route('/api/deposit', methods=['POST'])
+def deposit():
+    """Deposit funds from linked bank account"""
+    if not session.authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.json
+    amount = data.get('amount', 0)
+    source = data.get('source', 'bank')  # 'bank' or 'checking'
+
+    if amount <= 0:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid amount'
+        })
+
+    # Create command for Claude CLI
+    if source == 'checking':
+        command = f"Transfer ${amount:.2f} from my Robinhood checking account to my Robinhood brokerage account"
+    else:
+        command = f"Deposit ${amount:.2f} from my linked bank account to my Robinhood account"
+
+    # Execute the command
+    result = execute_claude_command(command)
+
+    return jsonify({
+        'success': result['success'],
+        'message': result['output'] if result['success'] else result['error'],
+        'amount': amount,
+        'source': source
     })
 
 @app.route('/health')

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>P3 ATM - Clover Integration</title>
+    <script src="https://sdk.clover.com/v3/clover.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .status {
+            padding: 20px;
+            border: 2px solid #0f0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏦 P3 Lending ATM - Clover Bridge</h1>
+    <div class="status" id="status">Initializing Clover connection...</div>
+
+    <button onclick="requestPin()" style="font-size: 24px; padding: 20px;">
+        🔐 Swipe Card & Enter PIN
+    </button>
+
+    <script>
+        // Initialize Clover SDK
+        const clover = new Clover({
+            merchant_id: 'YOUR_MERCHANT_ID',
+            access_token: 'YOUR_ACCESS_TOKEN'
+        });
+
+        async function requestPin() {
+            document.getElementById('status').textContent = 'Please swipe card and enter PIN on secure pad...';
+
+            try {
+                // Request PIN entry on Clover's secure PIN pad
+                const result = await clover.payments.capturePin({
+                    timeout: 30000,  // 30 second timeout
+                    message: 'Enter PIN for P3 ATM'
+                });
+
+                // Send encrypted PIN to your Flask server
+                const response = await fetch('http://100.103.3.35:5050/api/authenticate/card', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        encrypted_pin: result.encryptedPin,
+                        card_token: result.cardToken,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect to main ATM interface
+                    window.location.href = 'http://100.103.3.35:5050';
+                } else {
+                    document.getElementById('status').textContent =
+                        '❌ ' + data.message;
+                }
+            } catch (error) {
+                document.getElementById('status').textContent =
+                    '❌ Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -57,6 +57,26 @@
             letter-spacing: 2px;
         }
 
+        .keyboard-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(52, 152, 219, 0.2);
+            border: 2px solid rgba(52, 152, 219, 0.4);
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #3498db;
+            font-size: 0.9em;
+            cursor: help;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .keyboard-indicator:hover {
+            background: rgba(52, 152, 219, 0.4);
+            transform: scale(1.05);
+        }
+
         .atm-screen {
             flex: 1;
             background: linear-gradient(180deg, #1a252f 0%, #2c3e50 100%);
@@ -137,6 +157,14 @@
 
         .numpad-btn:active {
             transform: scale(0.95);
+        }
+
+        .numpad-btn:focus,
+        .menu-btn:focus,
+        .back-btn:focus {
+            outline: 3px solid #f39c12;
+            outline-offset: 3px;
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.6);
         }
 
         .numpad-btn.clear {
@@ -456,6 +484,11 @@
         </div>
     </div>
 
+    <!-- Keyboard Navigation Indicator -->
+    <div class="keyboard-indicator" onclick="showKeyboardHelp()" title="Click or press ? for keyboard shortcuts">
+        ⌨️ Keyboard Mode
+    </div>
+
     <script>
         let pinEntry = '';
         let authenticated = false;
@@ -675,6 +708,172 @@
                 updateTimestamp('balance-timestamp');
             }
         }, 1000);
+
+        // ===== KEYBOARD NAVIGATION =====
+
+        // Global keyboard handler
+        document.addEventListener('keydown', (e) => {
+            const activeScreen = document.querySelector('.screen.active');
+
+            // PIN entry screen - number keys
+            if (activeScreen.id === 'pin-screen') {
+                if (e.key >= '0' && e.key <= '9') {
+                    e.preventDefault();
+                    addPinDigit(e.key);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitPin();
+                } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                    e.preventDefault();
+                    if (pinEntry.length > 0) {
+                        pinEntry = pinEntry.slice(0, -1);
+                        updatePinDisplay();
+                    }
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    clearPin();
+                    showScreen('welcome-screen');
+                }
+            }
+
+            // Welcome screen
+            else if (activeScreen.id === 'welcome-screen') {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    showScreen('pin-screen');
+                }
+            }
+
+            // Main menu - number keys as shortcuts
+            else if (activeScreen.id === 'menu-screen') {
+                if (e.key === '1') {
+                    e.preventDefault();
+                    showBalance();
+                } else if (e.key === '2') {
+                    e.preventDefault();
+                    showPositions();
+                } else if (e.key === '3') {
+                    e.preventDefault();
+                    showScreen('trade-screen');
+                } else if (e.key === '4' || e.key === 'Escape') {
+                    e.preventDefault();
+                    logout();
+                }
+            }
+
+            // Other screens - Escape or Backspace to go back
+            else if (activeScreen.id === 'balance-screen' ||
+                     activeScreen.id === 'positions-screen' ||
+                     activeScreen.id === 'trade-screen') {
+                if (e.key === 'Escape' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    showScreen('menu-screen');
+                }
+            }
+        });
+
+        // Add keyboard hints to screens
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add hints to main menu
+            const menuScreen = document.getElementById('menu-screen');
+            if (menuScreen) {
+                const menuButtons = menuScreen.querySelectorAll('.menu-btn');
+                if (menuButtons.length >= 4) {
+                    menuButtons[0].innerHTML = '<div class="icon">💰</div>Balance Inquiry<br><small style="opacity:0.7">[1]</small>';
+                    menuButtons[1].innerHTML = '<div class="icon">📊</div>View Positions<br><small style="opacity:0.7">[2]</small>';
+                    menuButtons[2].innerHTML = '<div class="icon">💱</div>Make Trade<br><small style="opacity:0.7">[3]</small>';
+                    menuButtons[3].innerHTML = '<div class="icon">🚪</div>Exit<br><small style="opacity:0.7">[4 or ESC]</small>';
+                }
+            }
+
+            // Add hint to welcome screen
+            const welcomeScreen = document.getElementById('welcome-screen');
+            if (welcomeScreen) {
+                const welcomeBtn = welcomeScreen.querySelector('.menu-btn');
+                if (welcomeBtn) {
+                    welcomeBtn.innerHTML = '<div class="icon">🔐</div>Enter PIN<br><small style="opacity:0.7">[ENTER]</small>';
+                }
+            }
+
+            // Add hints to back buttons
+            document.querySelectorAll('.back-btn').forEach(btn => {
+                if (!btn.classList.contains('logout-btn')) {
+                    btn.innerHTML = '← Back to Menu <small style="opacity:0.7">[ESC]</small>';
+                }
+            });
+
+            // Add hint to PIN screen
+            const pinScreen = document.getElementById('pin-screen');
+            if (pinScreen) {
+                const pinTitle = pinScreen.querySelector('.screen-title');
+                if (pinTitle) {
+                    pinTitle.innerHTML = 'Enter Your PIN<br><small style="font-size:0.5em; opacity:0.8">Use number keys 0-9, ENTER to submit, BACKSPACE to delete</small>';
+                }
+            }
+        });
+
+        // Help overlay (press ? for keyboard shortcuts)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+                const activeScreen = document.querySelector('.screen.active');
+                if (activeScreen.id !== 'pin-screen') {
+                    e.preventDefault();
+                    showKeyboardHelp();
+                }
+            }
+        });
+
+        function showKeyboardHelp() {
+            const helpHtml = `
+                <div style="background: rgba(0,0,0,0.9); position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                            display: flex; align-items: center; justify-content: center; z-index: 10000;"
+                     id="keyboard-help-overlay">
+                    <div style="background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+                                padding: 30px; border-radius: 15px; max-width: 600px; color: #ecf0f1;
+                                border: 3px solid #3498db;">
+                        <h2 style="color: #3498db; margin-bottom: 20px;">⌨️ Keyboard Shortcuts</h2>
+                        <div style="line-height: 2;">
+                            <strong>Welcome Screen:</strong><br>
+                            &nbsp;&nbsp;ENTER - Enter PIN screen<br><br>
+
+                            <strong>PIN Entry:</strong><br>
+                            &nbsp;&nbsp;0-9 - Enter digits<br>
+                            &nbsp;&nbsp;ENTER - Submit PIN<br>
+                            &nbsp;&nbsp;BACKSPACE - Delete last digit<br>
+                            &nbsp;&nbsp;ESC - Cancel<br><br>
+
+                            <strong>Main Menu:</strong><br>
+                            &nbsp;&nbsp;1 - Balance Inquiry<br>
+                            &nbsp;&nbsp;2 - View Positions<br>
+                            &nbsp;&nbsp;3 - Make Trade<br>
+                            &nbsp;&nbsp;4 or ESC - Exit<br><br>
+
+                            <strong>Any Screen:</strong><br>
+                            &nbsp;&nbsp;ESC - Go back / Exit<br>
+                            &nbsp;&nbsp;? or H - Show this help<br>
+                        </div>
+                        <button onclick="document.getElementById('keyboard-help-overlay').remove()"
+                                style="margin-top: 20px; padding: 10px 30px; background: #3498db;
+                                       color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em;">
+                            Close [ESC]
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', helpHtml);
+
+            // Close help with ESC
+            const helpOverlay = document.getElementById('keyboard-help-overlay');
+            helpOverlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    helpOverlay.remove();
+                }
+            });
+            helpOverlay.querySelector('button').focus();
+        }
+
+        console.log('⌨️ Keyboard navigation enabled!');
+        console.log('Press ? or H for keyboard shortcuts');
     </script>
 </body>
 </html>

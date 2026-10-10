@@ -26,7 +26,7 @@ BG_GREEN = "\033[42m"
 BG_RED = "\033[41m"
 
 # ATM Configuration
-CORRECT_PIN = "1234"  # Change this to your desired PIN
+CORRECT_PIN = "0213"  # Custom PIN
 STATE_FILE = "/home/matt/.trading-agent-state.json"
 MAX_PIN_ATTEMPTS = 3
 

@@ -165,10 +165,61 @@ class RobinhoodAPI:
 
     def get_account(self) -> Dict:
         """
-        Get account information
+        Get primary account information
         GET /api/v1/crypto/trading/accounts/
         """
         return self._make_request('GET', '/crypto/trading/accounts/')
+
+    def get_all_accounts(self) -> List[Dict]:
+        """
+        Get all accounts (crypto, stocks, etc)
+        Returns list of accounts with balances
+        """
+        if self.mock_mode:
+            return [
+                {
+                    'account_id': '5RF12345',
+                    'account_type': 'crypto',
+                    'account_name': 'Crypto Trading',
+                    'account_number': '2903',
+                    'balance': 34.45,
+                    'buying_power': 0.00
+                },
+                {
+                    'account_id': '5RF12346',
+                    'account_type': 'individual',
+                    'account_name': 'Individual Brokerage',
+                    'account_number': '2904',
+                    'balance': 1247.89,
+                    'buying_power': 340.12
+                },
+                {
+                    'account_id': '5RF12347',
+                    'account_type': 'retirement',
+                    'account_name': 'Roth IRA',
+                    'account_number': '2905',
+                    'balance': 8932.14,
+                    'buying_power': 0.00
+                }
+            ]
+
+        # In live mode, fetch real accounts
+        response = self._make_request('GET', '/accounts/')
+        accounts = response.get('results', [])
+
+        # Format accounts for ATM display
+        formatted = []
+        for acc in accounts:
+            formatted.append({
+                'account_id': acc.get('account_id'),
+                'account_type': acc.get('type', 'unknown'),
+                'account_name': acc.get('name', 'Account'),
+                'account_number': acc.get('account_number', '')[-4:],
+                'balance': float(acc.get('equity', 0)),
+                'buying_power': float(acc.get('buying_power', 0))
+            })
+
+        return formatted
 
     def get_buying_power(self) -> float:
         """

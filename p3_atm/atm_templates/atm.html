@@ -99,6 +99,35 @@
             color: #00C805;
         }
 
+        .legend-badge {
+            background: linear-gradient(135deg, #B8FF00 0%, #00C805 100%);
+            color: #000000;
+            padding: 12px 20px;
+            margin: 10px 20px 20px;
+            border-radius: 24px;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(184, 255, 0, 0.3);
+        }
+
+        .legend-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(184, 255, 0, 0.5);
+        }
+
+        .legend-icon {
+            display: inline-block;
+            margin-left: 8px;
+            transition: transform 0.3s;
+        }
+
+        .legend-badge:hover .legend-icon {
+            transform: translateX(4px) translateY(-2px);
+        }
+
         .nav-item {
             padding: 14px 20px;
             cursor: pointer;
@@ -148,6 +177,60 @@
 
         .account-selector:hover {
             background: #1a1a1a;
+        }
+
+        .account-selector.expanded {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .accounts-dropdown {
+            display: none;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .accounts-dropdown.show {
+            display: block;
+        }
+
+        .account-item {
+            padding: 16px 20px;
+            border-top: 1px solid #1a1a1a;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .account-item:hover {
+            background: #1a1a1a;
+        }
+
+        .account-item.active {
+            background: rgba(0, 200, 5, 0.1);
+            border-left: 3px solid #00C805;
+        }
+
+        .account-item-details h4 {
+            font-size: 0.95em;
+            margin-bottom: 4px;
+        }
+
+        .account-item-details p {
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .account-item-balance {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #00C805;
         }
 
         .account-info {
@@ -526,6 +609,58 @@
             transform: scale(1.05);
         }
 
+        .balance-preview {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 30px auto 40px;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .balance-preview-title {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .balance-preview-amount {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #00C805;
+            margin-bottom: 12px;
+        }
+
+        .balance-preview-accounts {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .balance-preview-account {
+            flex: 1;
+            min-width: 120px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .balance-preview-account-type {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .balance-preview-account-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .side-nav {
@@ -557,6 +692,12 @@
             <div class="nav-logo">
                 <div class="nav-logo-text">Robinhood</div>
             </div>
+
+            <!-- Robinhood Legend Badge -->
+            <div class="legend-badge" onclick="alert('Robinhood Legend Status: Active! 🎉\n\nYou have access to premium features and priority support.')">
+                Robinhood Legend <span class="legend-icon">↗</span>
+            </div>
+
             <div class="nav-item active" onclick="showScreen('home-screen')">
                 <span class="nav-icon">📊</span>
                 <span>Investing</span>
@@ -586,9 +727,21 @@
                 <div class="welcome-content">
                     <div class="welcome-logo">Robinhood</div>
                     <div class="welcome-title">ATM Trading Terminal</div>
-                    <p style="color: #888; margin-bottom: 40px;">
-                        Access your portfolio and trade crypto<br>
-                        Account: ••••2903
+
+                    <!-- Balance Preview -->
+                    <div class="balance-preview" id="welcome-balance-preview">
+                        <div class="balance-preview-title">Total Portfolio Value</div>
+                        <div class="balance-preview-amount" id="welcome-total-value">--</div>
+                        <div class="balance-preview-accounts" id="welcome-accounts-list">
+                            <div class="balance-preview-account">
+                                <div class="balance-preview-account-type">Loading...</div>
+                                <div class="balance-preview-account-value">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="color: #888; margin-bottom: 30px; font-size: 0.9em;">
+                        <strong>Welcome back!</strong> Enter your PIN to access trading
                     </p>
                     <button class="welcome-btn" onclick="showScreen('pin-screen')">
                         Enter PIN to Continue
@@ -625,15 +778,20 @@
             <!-- Home Screen -->
             <div id="home-screen" class="screen">
                 <!-- Account Selector -->
-                <div class="account-selector">
+                <div class="account-selector" id="account-selector" onclick="toggleAccountsDropdown()">
                     <div class="account-info">
-                        <div class="account-avatar">M</div>
+                        <div class="account-avatar" id="current-account-avatar">M</div>
                         <div class="account-details">
-                            <h3>Individual Trading</h3>
-                            <p>Account ••••2903</p>
+                            <h3 id="current-account-name">Individual Trading</h3>
+                            <p id="current-account-number">Account ••••2903</p>
                         </div>
                     </div>
-                    <span>▼</span>
+                    <span id="account-dropdown-arrow">▼</span>
+                </div>
+
+                <!-- All Accounts Dropdown -->
+                <div class="accounts-dropdown" id="accounts-dropdown">
+                    <!-- Accounts will be loaded here -->
                 </div>
 
                 <!-- Portfolio Card -->
@@ -788,6 +946,7 @@
             // Load data for specific screens
             if (screenId === 'home-screen') {
                 loadHomeData();
+                loadAllAccounts(); // Load all accounts for dropdown
             } else if (screenId === 'positions-screen') {
                 loadPositions();
             } else if (screenId === 'balance-screen') {
@@ -848,6 +1007,42 @@
         }
 
         // Load home screen data
+        async function loadWelcomeBalance() {
+            try {
+                const response = await fetch('/api/quick-balance');
+                const data = await response.json();
+
+                if (data.success && data.accounts) {
+                    // Update total value
+                    const totalValue = parseFloat(data.total_value || 0);
+                    document.getElementById('welcome-total-value').textContent = `$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+                    // Update accounts list
+                    const accountsList = document.getElementById('welcome-accounts-list');
+
+                    if (data.accounts.length > 0) {
+                        accountsList.innerHTML = data.accounts.map(acc => `
+                            <div class="balance-preview-account">
+                                <div class="balance-preview-account-type">${acc.account_name || acc.account_type}</div>
+                                <div class="balance-preview-account-value">$${parseFloat(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        accountsList.innerHTML = `
+                            <div class="balance-preview-account">
+                                <div class="balance-preview-account-type">No accounts</div>
+                                <div class="balance-preview-account-value">$0.00</div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading welcome balance:', error);
+                // Show fallback
+                document.getElementById('welcome-total-value').textContent = '--';
+            }
+        }
+
         async function loadHomeData() {
             try {
                 const response = await fetch('/api/portfolio');
@@ -1048,8 +1243,86 @@
             showScreen('welcome-screen');
         }
 
+        // Account management
+        let currentAccountId = null;
+        let allAccounts = [];
+
+        async function loadAllAccounts() {
+            try {
+                const response = await fetch('/api/quick-balance');
+                const data = await response.json();
+
+                if (data.success && data.accounts) {
+                    allAccounts = data.accounts;
+
+                    // Set first account as default
+                    if (allAccounts.length > 0 && !currentAccountId) {
+                        currentAccountId = allAccounts[0].account_id;
+                        updateCurrentAccount(allAccounts[0]);
+                    }
+
+                    // Render accounts dropdown
+                    renderAccountsDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+            }
+        }
+
+        function toggleAccountsDropdown() {
+            const dropdown = document.getElementById('accounts-dropdown');
+            const selector = document.getElementById('account-selector');
+            const arrow = document.getElementById('account-dropdown-arrow');
+
+            dropdown.classList.toggle('show');
+            selector.classList.toggle('expanded');
+            arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
+        }
+
+        function renderAccountsDropdown() {
+            const dropdown = document.getElementById('accounts-dropdown');
+
+            if (allAccounts.length === 0) {
+                dropdown.innerHTML = '<div style="padding: 20px; text-align: center; color: #888;">No accounts available</div>';
+                return;
+            }
+
+            dropdown.innerHTML = allAccounts.map(acc => `
+                <div class="account-item ${acc.account_id === currentAccountId ? 'active' : ''}"
+                     onclick="selectAccount('${acc.account_id}'); event.stopPropagation();">
+                    <div class="account-item-details">
+                        <h4>${acc.account_name || acc.account_type}</h4>
+                        <p>Account ••••${acc.account_number}</p>
+                    </div>
+                    <div class="account-item-balance">$${parseFloat(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectAccount(accountId) {
+            currentAccountId = accountId;
+            const account = allAccounts.find(acc => acc.account_id === accountId);
+            if (account) {
+                updateCurrentAccount(account);
+                renderAccountsDropdown();
+                toggleAccountsDropdown();
+                // Reload data for selected account
+                loadHomeData();
+            }
+        }
+
+        function updateCurrentAccount(account) {
+            document.getElementById('current-account-name').textContent = account.account_name || account.account_type;
+            document.getElementById('current-account-number').textContent = `Account ••••${account.account_number}`;
+
+            // Update avatar with first letter
+            const firstLetter = (account.account_name || 'A')[0].toUpperCase();
+            document.getElementById('current-account-avatar').textContent = firstLetter;
+        }
+
         // Initialize
         initTicker();
+        loadWelcomeBalance(); // Load balance preview on welcome screen
     </script>
     <script src="arrow_keys.js"></script>
     <script>

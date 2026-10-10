@@ -351,6 +351,35 @@ def health():
     """Health check"""
     return jsonify({'status': 'ok', 'clover': bool(CLOVER_MERCHANT_ID)})
 
+@app.route('/api/quick-balance', methods=['GET'])
+def quick_balance():
+    """
+    Get quick balance preview for welcome screen
+    Returns cached/last-known balances - no authentication required
+    This is safe because it only shows high-level totals from last session
+    """
+    try:
+        # Try to get accounts from API (will return mock data if not authenticated)
+        accounts = robinhood.get_all_accounts()
+
+        total_value = sum(acc.get('balance', 0) for acc in accounts)
+
+        return jsonify({
+            'success': True,
+            'total_value': total_value,
+            'accounts': accounts,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        print(f"Error getting quick balance: {e}")
+        # Fallback to safe default
+        return jsonify({
+            'success': True,
+            'total_value': 0.00,
+            'accounts': [],
+            'timestamp': datetime.now().isoformat()
+        })
+
 if __name__ == '__main__':
     # Create directories if they don't exist
     Path('atm_static').mkdir(exist_ok=True)

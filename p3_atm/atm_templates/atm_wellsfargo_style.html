@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P3 Lending Inc - ATM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #2b2b2b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .atm-frame {
+            width: 100%;
+            height: 100vh;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Wells Fargo Style Header */
+        .wf-header {
+            background: linear-gradient(180deg, #d71e28 0%, #b31b24 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .wf-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .wf-logo-text {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fdb71a;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
+        }
+
+        .wf-logo-sub {
+            color: white;
+            font-size: 0.9em;
+            font-weight: 300;
+        }
+
+        .wf-header-right {
+            color: white;
+            text-align: right;
+            font-size: 0.9em;
+        }
+
+        /* Main Content Area */
+        .atm-main {
+            display: flex;
+            flex: 1;
+            background: #e8e8e8;
+        }
+
+        /* Left Sidebar - Ads */
+        .atm-sidebar {
+            width: 280px;
+            background: white;
+            border-right: 3px solid #d71e28;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .ad-card {
+            background: white;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ad-card:hover {
+            background: #f5f5f5;
+            transform: scale(1.02);
+        }
+
+        .ad-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .ad-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #d71e28;
+            margin-bottom: 8px;
+        }
+
+        .ad-description {
+            font-size: 0.85em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .ad-cta {
+            background: #fdb71a;
+            color: #000;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Center Screen */
+        .atm-screen {
+            flex: 1;
+            background: #1e3a5f;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            flex: 1;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen-title {
+            font-size: 2em;
+            color: white;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .screen-content {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        /* Wells Fargo Style Buttons */
+        .wf-btn {
+            background: white;
+            color: #1e3a5f;
+            padding: 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .wf-btn:hover {
+            background: #fdb71a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .wf-btn-icon {
+            font-size: 1.5em;
+        }
+
+        /* PIN Pad */
+        .pin-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 400px;
+            margin: 30px auto;
+        }
+
+        .pin-btn {
+            background: white;
+            border: 2px solid #d71e28;
+            color: #1e3a5f;
+            font-size: 2em;
+            padding: 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .pin-btn:hover {
+            background: #fdb71a;
+            transform: scale(1.05);
+        }
+
+        .pin-display {
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 10px;
+            font-size: 3em;
+            letter-spacing: 20px;
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        /* Balance Display */
+        .balance-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2b5a8f 100%);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            margin: 20px 0;
+        }
+
+        .balance-label {
+            color: #fdb71a;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .balance-amount {
+            color: white;
+            font-size: 4em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Footer */
+        .atm-footer {
+            background: #f5f5f5;
+            padding: 15px 30px;
+            border-top: 3px solid #d71e28;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer-link {
+            color: #d71e28;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Language Selector */
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        /* Transaction Receipt Style */
+        .receipt {
+            background: white;
+            color: #000;
+            padding: 30px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        .receipt-header {
+            text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .receipt-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .receipt-total {
+            font-size: 1.5em;
+            font-weight: bold;
+            border-top: 2px solid #000;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        /* Promotional Banner */
+        .promo-banner {
+            background: linear-gradient(90deg, #fdb71a 0%, #f5a623 100%);
+            color: #000;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #fdb71a;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .atm-main {
+                flex-direction: column;
+            }
+
+            .atm-sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 3px solid #d71e28;
+            }
+
+            .ad-card {
+                display: inline-block;
+                width: 250px;
+                vertical-align: top;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="atm-frame">
+        <!-- Wells Fargo Header -->
+        <div class="wf-header">
+            <div class="wf-logo">
+                <div>
+                    <div class="wf-logo-text">P3 LENDING</div>
+                    <div class="wf-logo-sub">Established Banking Since 2024</div>
+                </div>
+            </div>
+            <div class="wf-header-right">
+                <div id="header-date">12/31/2026</div>
+                <div id="header-time">12:00 PM</div>
+            </div>
+        </div>
+
+        <!-- Promotional Banner -->
+        <div class="promo-banner" id="promo-banner">
+            🎉 Open a new checking account today and get $300! Ask how inside.
+        </div>
+
+        <!-- Main Content -->
+        <div class="atm-main">
+            <!-- Left Sidebar - Ads -->
+            <div class="atm-sidebar">
+                <div class="ad-card">
+                    <div style="background: linear-gradient(135deg, #d71e28, #b31b24); height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2em; font-weight: bold; margin-bottom: 10px;">
+                        💳
+                    </div>
+                    <div class="ad-title">P3 Rewards Credit Card</div>
+                    <div class="ad-description">
+                        Earn 3% cash back on gas, 2% at restaurants, and 1% on everything else. No annual fee!
+                    </div>
+                    <button class="ad-cta">Learn More</button>
+                </div>
+
+                <div class="ad-card">
+                    <div style="background: linear-gradient(135deg, #1e3a5f, #2b5a8f); height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2em; font-weight: bold; margin-bottom: 10px;">
+                        🏠
+                    </div>
+                    <div class="ad-title">Home Loans Made Easy</div>
+                    <div class="ad-description">
+                        Rates as low as 5.99% APR. Pre-qualify in minutes with no impact to your credit score.
+                    </div>
+                    <button class="ad-cta">Apply Now</button>
+                </div>
+
+                <div class="ad-card">
+                    <div style="background: linear-gradient(135deg, #fdb71a, #f5a623); height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #000; font-size: 2em; font-weight: bold; margin-bottom: 10px;">
+                        💰
+                    </div>
+                    <div class="ad-title">High-Yield Savings</div>
+                    <div class="ad-description">
+                        Earn 4.5% APY on your savings. FDIC insured up to $250,000. Open an account today!
+                    </div>
+                    <button class="ad-cta">Open Account</button>
+                </div>
+
+                <div class="ad-card">
+                    <div style="background: linear-gradient(135deg, #27ae60, #229954); height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2em; font-weight: bold; margin-bottom: 10px;">
+                        📱
+                    </div>
+                    <div class="ad-title">Mobile Banking App</div>
+                    <div class="ad-description">
+                        Manage your money anywhere. Deposit checks, pay bills, and track spending on the go.
+                    </div>
+                    <button class="ad-cta">Download App</button>
+                </div>
+            </div>
+
+            <!-- Center Screen -->
+            <div class="atm-screen">
+                <div class="language-selector" onclick="alert('Language: English ✓')">
+                    🌐 English
+                </div>
+
+                <!-- Welcome Screen -->
+                <div id="welcome-screen" class="screen active">
+                    <div class="screen-title">Welcome to P3 Lending</div>
+                    <div class="screen-content" style="display: flex; flex-direction: column; justify-content: center;">
+                        <div style="text-align: center; color: white; font-size: 1.5em; margin-bottom: 40px;">
+                            Please insert your card or enter your PIN to begin
+                        </div>
+                        <button class="wf-btn" onclick="showScreen('pin-screen')">
+                            <span>🔐 Enter PIN</span>
+                            <span class="wf-btn-icon">→</span>
+                        </button>
+                        <div style="text-align: center; color: rgba(255,255,255,0.6); margin-top: 30px; font-size: 0.9em;">
+                            Account: ••••2903<br>
+                            This terminal is monitored for your security
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PIN Screen -->
+                <div id="pin-screen" class="screen">
+                    <div class="screen-title">Enter Your PIN</div>
+                    <div class="screen-content">
+                        <div class="pin-display" id="pin-display">••••</div>
+                        <div class="pin-pad">
+                            <button class="pin-btn" onclick="addPinDigit('1')">1</button>
+                            <button class="pin-btn" onclick="addPinDigit('2')">2</button>
+                            <button class="pin-btn" onclick="addPinDigit('3')">3</button>
+                            <button class="pin-btn" onclick="addPinDigit('4')">4</button>
+                            <button class="pin-btn" onclick="addPinDigit('5')">5</button>
+                            <button class="pin-btn" onclick="addPinDigit('6')">6</button>
+                            <button class="pin-btn" onclick="addPinDigit('7')">7</button>
+                            <button class="pin-btn" onclick="addPinDigit('8')">8</button>
+                            <button class="pin-btn" onclick="addPinDigit('9')">9</button>
+                            <button class="pin-btn" style="background: #e74c3c; color: white;" onclick="clearPin()">✕</button>
+                            <button class="pin-btn" onclick="addPinDigit('0')">0</button>
+                            <button class="pin-btn" style="background: #27ae60; color: white;" onclick="submitPin()">✓</button>
+                        </div>
+                        <button class="wf-btn" style="max-width: 300px; margin: 20px auto;" onclick="showScreen('welcome-screen')">
+                            ← Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Menu -->
+                <div id="menu-screen" class="screen">
+                    <div class="screen-title">What would you like to do today?</div>
+                    <div class="screen-content">
+                        <button class="wf-btn" onclick="showBalance()">
+                            <span>💰 Check Balance</span>
+                            <span class="wf-btn-icon">→</span>
+                        </button>
+                        <button class="wf-btn" onclick="showPositions()">
+                            <span>📊 View Investments</span>
+                            <span class="wf-btn-icon">→</span>
+                        </button>
+                        <button class="wf-btn" onclick="showScreen('trade-screen')">
+                            <span>💱 Trade Crypto</span>
+                            <span class="wf-btn-icon">→</span>
+                        </button>
+                        <button class="wf-btn" onclick="alert('Transfers available through mobile app')">
+                            <span>⬆️ Transfer Money</span>
+                            <span class="wf-btn-icon">→</span>
+                        </button>
+                        <button class="wf-btn" style="background: #f5f5f5; color: #666;" onclick="logout()">
+                            <span>🚪 Exit</span>
+                            <span class="wf-btn-icon">→</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Balance Screen -->
+                <div id="balance-screen" class="screen">
+                    <div class="screen-title">Account Balance</div>
+                    <div class="screen-content">
+                        <div class="balance-card">
+                            <div class="balance-label">Total Account Value</div>
+                            <div class="balance-amount" id="total-value">$0.00</div>
+                        </div>
+                        <div class="receipt">
+                            <div class="receipt-header">
+                                <div style="font-weight: bold; font-size: 1.2em;">P3 LENDING INC</div>
+                                <div>Main Branch ATM #01</div>
+                                <div id="receipt-datetime">12/31/2026 12:00 PM</div>
+                            </div>
+                            <div class="receipt-line">
+                                <span>Account:</span>
+                                <span>••••2903</span>
+                            </div>
+                            <div class="receipt-line">
+                                <span>Transaction:</span>
+                                <span id="transaction-id">Loading...</span>
+                            </div>
+                            <div class="receipt-line receipt-total">
+                                <span>Available Balance:</span>
+                                <span id="receipt-balance">$0.00</span>
+                            </div>
+                        </div>
+                        <button class="wf-btn" onclick="showScreen('menu-screen')">
+                            ← Back to Menu
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Positions Screen -->
+                <div id="positions-screen" class="screen">
+                    <div class="screen-title">Your Investments</div>
+                    <div class="screen-content" id="positions-list">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+
+                <!-- Trade Screen -->
+                <div id="trade-screen" class="screen">
+                    <div class="screen-title">Crypto Trading</div>
+                    <div class="screen-content">
+                        <div style="text-align: center; color: white; margin: 50px 0;">
+                            <div style="font-size: 1.3em; margin-bottom: 20px;">
+                                Trade cryptocurrencies through our mobile app for the best experience
+                            </div>
+                            <button class="ad-cta" style="font-size: 1.1em; padding: 15px 30px;">
+                                📱 Download P3 Mobile App
+                            </button>
+                        </div>
+                        <button class="wf-btn" onclick="showScreen('menu-screen')">
+                            ← Back to Menu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="atm-footer">
+            <div>
+                © 2026 P3 Lending Inc. Member FDIC. Equal Housing Lender.
+            </div>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy</a>
+                <a href="#" class="footer-link">Terms</a>
+                <a href="#" class="footer-link">Help: 1-800-P3-LEND</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pinEntry = '';
+        let authenticated = false;
+        const CORRECT_PIN = '0213';
+
+        // Update header time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('header-date').textContent = now.toLocaleDateString();
+            document.getElementById('header-time').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Rotate promo banners
+        const promos = [
+            '🎉 Open a new checking account today and get $300! Ask how inside.',
+            '💳 Get 3% cash back with the P3 Rewards Credit Card. Apply now!',
+            '🏠 Home loan rates as low as 5.99% APR. Pre-qualify today!',
+            '📱 Download our mobile app and bank from anywhere!'
+        ];
+        let promoIndex = 0;
+        setInterval(() => {
+            promoIndex = (promoIndex + 1) % promos.length;
+            document.getElementById('promo-banner').textContent = promos[promoIndex];
+        }, 5000);
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function addPinDigit(digit) {
+            if (pinEntry.length < 4) {
+                pinEntry += digit;
+                document.getElementById('pin-display').textContent = '●'.repeat(pinEntry.length) + '○'.repeat(4 - pinEntry.length);
+            }
+        }
+
+        function clearPin() {
+            pinEntry = '';
+            document.getElementById('pin-display').textContent = '••••';
+        }
+
+        async function submitPin() {
+            if (pinEntry.length !== 4) {
+                alert('Please enter a 4-digit PIN');
+                return;
+            }
+
+            if (pinEntry === CORRECT_PIN) {
+                authenticated = true;
+                clearPin();
+                showScreen('menu-screen');
+            } else {
+                alert('Incorrect PIN. Please try again.');
+                clearPin();
+            }
+        }
+
+        async function showBalance() {
+            showScreen('balance-screen');
+            // Generate transaction ID
+            const txnId = 'TXN-' + new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+            document.getElementById('transaction-id').textContent = txnId;
+            document.getElementById('receipt-datetime').textContent = new Date().toLocaleString();
+
+            try {
+                const response = await fetch('/api/balance');
+                const data = await response.json();
+                const totalValue = data.total_value || 34.45;
+
+                document.getElementById('total-value').textContent = `$${totalValue.toFixed(2)}`;
+                document.getElementById('receipt-balance').textContent = `$${totalValue.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+            }
+        }
+
+        async function showPositions() {
+            showScreen('positions-screen');
+            const listEl = document.getElementById('positions-list');
+            listEl.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const response = await fetch('/api/positions');
+                const data = await response.json();
+
+                if (data.positions && data.positions.length > 0) {
+                    listEl.innerHTML = data.positions.map(pos => `
+                        <div style="background: white; border-radius: 10px; padding: 20px; margin: 10px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-size: 1.5em; font-weight: bold; color: #1e3a5f;">${pos.symbol}</div>
+                                    <div style="color: #666;">${pos.quantity.toFixed(8)}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 1.3em; font-weight: bold; color: #27ae60;">$${pos.value.toFixed(2)}</div>
+                                    <div style="color: ${pos.change.startsWith('+') ? '#27ae60' : '#e74c3c'};">${pos.change}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    listEl.innerHTML += '<button class="wf-btn" onclick="showScreen(\'menu-screen\')">← Back to Menu</button>';
+                } else {
+                    listEl.innerHTML = '<div style="text-align: center; color: white; font-size: 1.2em;">No investments found</div>';
+                }
+            } catch (error) {
+                listEl.innerHTML = '<div style="text-align: center; color: white;">Error loading investments</div>';
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            authenticated = false;
+            pinEntry = '';
+            showScreen('welcome-screen');
+        }
+    </script>
+</body>
+</html>

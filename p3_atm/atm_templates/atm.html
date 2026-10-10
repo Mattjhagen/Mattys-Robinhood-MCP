@@ -661,6 +661,167 @@
             color: #ffffff;
         }
 
+        /* ATM Quick Balance Screen */
+        .atm-receipt {
+            max-width: 500px;
+            margin: 60px auto;
+            background: #ffffff;
+            color: #000000;
+            padding: 40px;
+            border-radius: 4px;
+            box-shadow: 0 10px 40px rgba(0, 200, 5, 0.2);
+            font-family: 'Courier New', monospace;
+        }
+
+        .atm-receipt-header {
+            text-align: center;
+            border-bottom: 2px dashed #333;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .atm-receipt-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .atm-receipt-subtitle {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .atm-receipt-section {
+            margin: 20px 0;
+        }
+
+        .atm-receipt-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .atm-receipt-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #00C805;
+            margin-bottom: 10px;
+        }
+
+        .atm-receipt-accounts {
+            margin-top: 20px;
+        }
+
+        .atm-receipt-account-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dotted #ccc;
+            font-size: 0.95em;
+        }
+
+        .atm-receipt-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #333;
+        }
+
+        .atm-continue-btn {
+            background: #00C805;
+            color: #ffffff;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 24px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin-top: 20px;
+        }
+
+        .atm-continue-btn:hover {
+            background: #00FF00;
+            transform: scale(1.05);
+        }
+
+        /* Inactivity Timeout Modal */
+        .timeout-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeout-overlay.active {
+            display: flex;
+        }
+
+        .timeout-modal {
+            background: #0a0a0a;
+            border: 2px solid #FF5000;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 80, 0, 0.5);
+        }
+
+        .timeout-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .timeout-title {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #FF5000;
+        }
+
+        .timeout-message {
+            font-size: 1.1em;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .timeout-countdown {
+            font-size: 3em;
+            font-weight: 700;
+            color: #FF5000;
+            margin-bottom: 30px;
+        }
+
+        .timeout-btn {
+            background: #00C805;
+            color: #000000;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 24px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeout-btn:hover {
+            background: #00FF00;
+            transform: scale(1.05);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .side-nav {
@@ -727,21 +888,8 @@
                 <div class="welcome-content">
                     <div class="welcome-logo">Robinhood</div>
                     <div class="welcome-title">ATM Trading Terminal</div>
-
-                    <!-- Balance Preview -->
-                    <div class="balance-preview" id="welcome-balance-preview">
-                        <div class="balance-preview-title">Total Portfolio Value</div>
-                        <div class="balance-preview-amount" id="welcome-total-value">--</div>
-                        <div class="balance-preview-accounts" id="welcome-accounts-list">
-                            <div class="balance-preview-account">
-                                <div class="balance-preview-account-type">Loading...</div>
-                                <div class="balance-preview-account-value">--</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p style="color: #888; margin-bottom: 30px; font-size: 0.9em;">
-                        <strong>Welcome back!</strong> Enter your PIN to access trading
+                    <p style="color: #888; margin-bottom: 40px;">
+                        Insert your card or enter your PIN to continue
                     </p>
                     <button class="welcome-btn" onclick="showScreen('pin-screen')">
                         Enter PIN to Continue
@@ -772,6 +920,41 @@
                     <button class="action-btn secondary" style="margin-top: 30px;" onclick="showScreen('welcome-screen')">
                         Cancel
                     </button>
+                </div>
+            </div>
+
+            <!-- Quick Balance Screen (ATM Style) -->
+            <div id="quick-balance-screen" class="screen">
+                <div class="atm-receipt">
+                    <div class="atm-receipt-header">
+                        <div class="atm-receipt-title">ROBINHOOD ATM</div>
+                        <div class="atm-receipt-subtitle" id="balance-date">--</div>
+                        <div class="atm-receipt-subtitle" id="balance-time">--</div>
+                    </div>
+
+                    <div class="atm-receipt-section">
+                        <div class="atm-receipt-label">TOTAL BALANCE INQUIRY</div>
+                        <div class="atm-receipt-value" id="quick-total-balance">$0.00</div>
+                    </div>
+
+                    <div class="atm-receipt-section">
+                        <div class="atm-receipt-label">AVAILABLE TO TRADE</div>
+                        <div style="font-size: 1.2em; font-weight: 600;" id="quick-buying-power">$0.00</div>
+                    </div>
+
+                    <div class="atm-receipt-accounts" id="quick-accounts-list">
+                        <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">ACCOUNT BREAKDOWN</div>
+                        <!-- Accounts will be loaded here -->
+                    </div>
+
+                    <div class="atm-receipt-footer">
+                        <div style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                            Transaction ID: <span id="transaction-id">--</span>
+                        </div>
+                        <button class="atm-continue-btn" onclick="showScreen('home-screen')">
+                            Continue to Trading
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -937,7 +1120,7 @@
 
             // Show/hide side nav
             const sideNav = document.getElementById('side-nav');
-            if (authenticated && screenId !== 'welcome-screen' && screenId !== 'pin-screen') {
+            if (authenticated && screenId !== 'welcome-screen' && screenId !== 'pin-screen' && screenId !== 'quick-balance-screen') {
                 sideNav.style.display = 'flex';
             } else {
                 sideNav.style.display = 'none';
@@ -996,7 +1179,8 @@
                 if (data.success) {
                     authenticated = true;
                     clearPin();
-                    showScreen('home-screen');
+                    showScreen('quick-balance-screen');
+                    loadQuickBalance(); // Load ATM-style balance
                 } else {
                     document.getElementById('pin-error').textContent = data.message;
                     clearPin();
@@ -1006,40 +1190,52 @@
             }
         }
 
-        // Load home screen data
-        async function loadWelcomeBalance() {
+        // Load ATM-style quick balance (after PIN)
+        async function loadQuickBalance() {
             try {
                 const response = await fetch('/api/quick-balance');
                 const data = await response.json();
 
                 if (data.success && data.accounts) {
-                    // Update total value
+                    // Set date and time
+                    const now = new Date();
+                    document.getElementById('balance-date').textContent = now.toLocaleDateString('en-US', {
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                    document.getElementById('balance-time').textContent = now.toLocaleTimeString('en-US');
+
+                    // Transaction ID
+                    document.getElementById('transaction-id').textContent = `TXN${Date.now().toString().slice(-8)}`;
+
+                    // Total balance
                     const totalValue = parseFloat(data.total_value || 0);
-                    document.getElementById('welcome-total-value').textContent = `$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById('quick-total-balance').textContent =
+                        `$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
-                    // Update accounts list
-                    const accountsList = document.getElementById('welcome-accounts-list');
+                    // Buying power (sum of all account buying power)
+                    const totalBuyingPower = data.accounts.reduce((sum, acc) => sum + parseFloat(acc.buying_power || 0), 0);
+                    document.getElementById('quick-buying-power').textContent =
+                        `$${totalBuyingPower.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
+                    // Account breakdown
+                    const accountsList = document.getElementById('quick-accounts-list');
                     if (data.accounts.length > 0) {
-                        accountsList.innerHTML = data.accounts.map(acc => `
-                            <div class="balance-preview-account">
-                                <div class="balance-preview-account-type">${acc.account_name || acc.account_type}</div>
-                                <div class="balance-preview-account-value">$${parseFloat(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                        const accountsHTML = data.accounts.map(acc => `
+                            <div class="atm-receipt-account-line">
+                                <span>${acc.account_name || acc.account_type} ••••${acc.account_number}</span>
+                                <span>$${parseFloat(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                             </div>
                         `).join('');
-                    } else {
+
                         accountsList.innerHTML = `
-                            <div class="balance-preview-account">
-                                <div class="balance-preview-account-type">No accounts</div>
-                                <div class="balance-preview-account-value">$0.00</div>
-                            </div>
+                            <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">ACCOUNT BREAKDOWN</div>
+                            ${accountsHTML}
                         `;
                     }
                 }
             } catch (error) {
-                console.error('Error loading welcome balance:', error);
-                // Show fallback
-                document.getElementById('welcome-total-value').textContent = '--';
+                console.error('Error loading quick balance:', error);
+                document.getElementById('quick-total-balance').textContent = 'Error loading balance';
             }
         }
 
@@ -1322,7 +1518,6 @@
 
         // Initialize
         initTicker();
-        loadWelcomeBalance(); // Load balance preview on welcome screen
     </script>
     <script src="arrow_keys.js"></script>
     <script>
@@ -1368,6 +1563,96 @@
         const _origShow = window.showScreen; window.showScreen = function(s) { if (_origShow) _origShow(s); setTimeout(() => { focusIndex = 0; updateFocusableElements(); focusElement(0); }, 100); };
         setTimeout(() => { updateFocusableElements(); focusElement(0); }, 500);
         console.log("⬆️⬇️⬅️➡️ Arrow keys enabled!");
+    </script>
+
+    <!-- Inactivity Timeout Modal -->
+    <div class="timeout-overlay" id="timeout-overlay">
+        <div class="timeout-modal">
+            <div class="timeout-icon">⏱️</div>
+            <div class="timeout-title">Are you still there?</div>
+            <div class="timeout-message">Your session will end in:</div>
+            <div class="timeout-countdown" id="timeout-countdown">30</div>
+            <button class="timeout-btn" onclick="resetInactivityTimer()">
+                Yes, I'm Still Here
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Inactivity timeout (2 minutes = 120 seconds)
+        let inactivityTimer = null;
+        let warningTimer = null;
+        let countdownTimer = null;
+        let countdownSeconds = 30;
+        const INACTIVITY_TIMEOUT = 120000; // 2 minutes in milliseconds
+        const WARNING_COUNTDOWN = 30; // 30 seconds countdown
+
+        function startInactivityTimer() {
+            // Only start if authenticated
+            if (!authenticated) return;
+
+            clearAllTimers();
+
+            // Start 2-minute inactivity timer
+            inactivityTimer = setTimeout(() => {
+                showTimeoutWarning();
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        function showTimeoutWarning() {
+            const overlay = document.getElementById('timeout-overlay');
+            overlay.classList.add('active');
+
+            countdownSeconds = WARNING_COUNTDOWN;
+            document.getElementById('timeout-countdown').textContent = countdownSeconds;
+
+            // Start countdown
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                document.getElementById('timeout-countdown').textContent = countdownSeconds;
+
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    hideTimeoutWarning();
+                    logout(); // Auto logout
+                }
+            }, 1000);
+        }
+
+        function hideTimeoutWarning() {
+            const overlay = document.getElementById('timeout-overlay');
+            overlay.classList.remove('active');
+            clearInterval(countdownTimer);
+        }
+
+        function resetInactivityTimer() {
+            hideTimeoutWarning();
+            startInactivityTimer();
+        }
+
+        function clearAllTimers() {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            if (warningTimer) clearTimeout(warningTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+        }
+
+        // Track user activity
+        ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+            document.addEventListener(event, () => {
+                if (authenticated) {
+                    startInactivityTimer();
+                }
+            });
+        });
+
+        // Start timer when user authenticates (called from submitPin)
+        const originalShowScreen = showScreen;
+        window.showScreen = function(screenId) {
+            originalShowScreen(screenId);
+            if (authenticated && screenId !== 'welcome-screen') {
+                startInactivityTimer();
+            }
+        };
     </script>
 
 </body>

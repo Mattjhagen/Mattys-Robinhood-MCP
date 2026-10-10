@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -25,12 +25,13 @@
             width: 100%;
             max-width: 800px;
             height: 90vh;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 255, 0, 0.3), 0 0 100px rgba(0, 255, 0, 0.1);
             padding: 30px;
             display: flex;
             flex-direction: column;
+            border: 2px solid #00ff00;
         }
 
         .atm-header {
@@ -38,22 +39,22 @@
             color: white;
             margin-bottom: 20px;
             padding: 20px;
-            background: rgba(52, 152, 219, 0.2);
+            background: rgba(0, 255, 0, 0.1);
             border-radius: 10px;
-            border: 2px solid rgba(52, 152, 219, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
         }
 
         .atm-logo {
             font-size: 2.5em;
             font-weight: bold;
-            color: #3498db;
-            text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+            color: #00ff00;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
             margin-bottom: 10px;
         }
 
         .atm-institution {
             font-size: 1.2em;
-            color: #ecf0f1;
+            color: #ccffcc;
             letter-spacing: 2px;
         }
 
@@ -61,32 +62,34 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: rgba(52, 152, 219, 0.2);
-            border: 2px solid rgba(52, 152, 219, 0.4);
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid rgba(0, 255, 0, 0.5);
             border-radius: 10px;
             padding: 10px 15px;
-            color: #3498db;
+            color: #00ff00;
             font-size: 0.9em;
             cursor: help;
             transition: all 0.3s;
             z-index: 1000;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
         .keyboard-indicator:hover {
-            background: rgba(52, 152, 219, 0.4);
+            background: rgba(0, 255, 0, 0.2);
             transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
         }
 
         .atm-screen {
             flex: 1;
-            background: linear-gradient(180deg, #1a252f 0%, #2c3e50 100%);
+            background: linear-gradient(180deg, #000000 0%, #0d0d0d 100%);
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 20px;
-            color: #ecf0f1;
+            color: #00ff00;
             overflow-y: auto;
-            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
-            border: 3px solid #34495e;
+            box-shadow: inset 0 0 30px rgba(0, 255, 0, 0.1);
+            border: 3px solid #00ff00;
         }
 
         .screen {
@@ -106,9 +109,10 @@
         .screen-title {
             font-size: 1.8em;
             margin-bottom: 20px;
-            color: #3498db;
-            border-bottom: 2px solid #3498db;
+            color: #00ff00;
+            border-bottom: 2px solid #00ff00;
             padding-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
         }
 
         .pin-input-container {
@@ -139,9 +143,9 @@
         }
 
         .numpad-btn {
-            background: linear-gradient(180deg, #34495e 0%, #2c3e50 100%);
-            border: 2px solid #3498db;
-            color: white;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+            border: 2px solid #00ff00;
+            color: #00ff00;
             font-size: 1.8em;
             padding: 20px;
             border-radius: 10px;
@@ -150,9 +154,10 @@
         }
 
         .numpad-btn:hover {
-            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            background: linear-gradient(180deg, #00ff00 0%, #00cc00 100%);
+            color: #000000;
             transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
         }
 
         .numpad-btn:active {
@@ -162,9 +167,9 @@
         .numpad-btn:focus,
         .menu-btn:focus,
         .back-btn:focus {
-            outline: 3px solid #f39c12;
+            outline: 3px solid #00ff00;
             outline-offset: 3px;
-            box-shadow: 0 0 20px rgba(243, 156, 18, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
         }
 
         .numpad-btn.clear {
@@ -186,9 +191,9 @@
         }
 
         .menu-btn {
-            background: linear-gradient(180deg, #34495e 0%, #2c3e50 100%);
-            border: 2px solid #3498db;
-            color: white;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+            border: 2px solid #00ff00;
+            color: #00ff00;
             padding: 30px 20px;
             border-radius: 15px;
             font-size: 1.3em;
@@ -198,9 +203,10 @@
         }
 
         .menu-btn:hover {
-            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            background: linear-gradient(180deg, #00ff00 0%, #00cc00 100%);
+            color: #000000;
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.6);
         }
 
         .menu-btn .icon {
@@ -236,8 +242,8 @@
         }
 
         .position-item {
-            background: rgba(52, 152, 219, 0.1);
-            border: 2px solid #3498db;
+            background: rgba(0, 255, 0, 0.05);
+            border: 2px solid #00ff00;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 15px;
@@ -249,7 +255,7 @@
         .position-symbol {
             font-size: 1.5em;
             font-weight: bold;
-            color: #3498db;
+            color: #00ff00;
         }
 
         .position-details {
@@ -479,16 +485,70 @@
 
             <!-- Trade Screen -->
             <div id="trade-screen" class="screen">
-                <div class="screen-title">Trading</div>
-                <div style="text-align: center; margin: 60px 0;">
-                    <div style="font-size: 1.5em; margin-bottom: 30px; color: #e74c3c;">
-                        🚧 Coming Soon 🚧
-                    </div>
-                    <div class="info-text">
-                        Trading functionality will be available soon.<br>
-                        For immediate trades, please use the main terminal.
+                <div class="screen-title">Trading Center</div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="text-align: center; font-size: 1.1em; color: #3498db; margin-bottom: 20px;">
+                        Available: <span id="trade-buying-power">$0.00</span>
                     </div>
                 </div>
+
+                <!-- Trade Type Selection -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                    <button id="buy-tab" class="menu-btn" onclick="showTradeType('buy')" style="padding: 15px;">
+                        <div style="font-size: 1.2em;">📈 BUY</div>
+                    </button>
+                    <button id="sell-tab" class="menu-btn" onclick="showTradeType('sell')" style="padding: 15px;">
+                        <div style="font-size: 1.2em;">📉 SELL</div>
+                    </button>
+                </div>
+
+                <!-- Buy Form -->
+                <div id="buy-form" style="display: none;">
+                    <div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 10px; padding: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #ecf0f1; margin-bottom: 5px;">Asset Symbol:</label>
+                            <input type="text" id="buy-symbol" placeholder="BTC, ETH, DOGE..."
+                                   style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #27ae60;
+                                          border-radius: 5px; background: rgba(0,0,0,0.3); color: white;"
+                                   maxlength="10">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #ecf0f1; margin-bottom: 5px;">Amount (USD):</label>
+                            <input type="number" id="buy-amount" placeholder="0.00" step="0.01" min="0"
+                                   style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #27ae60;
+                                          border-radius: 5px; background: rgba(0,0,0,0.3); color: white;">
+                        </div>
+                        <button onclick="executeBuy()" class="menu-btn" style="width: 100%; background: linear-gradient(180deg, #27ae60 0%, #229954 100%); border-color: #27ae60;">
+                            <div style="font-size: 1.2em;">✓ Execute Buy Order</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sell Form -->
+                <div id="sell-form" style="display: none;">
+                    <div style="background: rgba(231, 76, 60, 0.1); border: 2px solid #e74c3c; border-radius: 10px; padding: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #ecf0f1; margin-bottom: 5px;">Asset Symbol:</label>
+                            <input type="text" id="sell-symbol" placeholder="BTC, ETH, DOGE..."
+                                   style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #e74c3c;
+                                          border-radius: 5px; background: rgba(0,0,0,0.3); color: white;"
+                                   maxlength="10">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #ecf0f1; margin-bottom: 5px;">Quantity:</label>
+                            <input type="number" id="sell-quantity" placeholder="0.00000000" step="0.00000001" min="0"
+                                   style="width: 100%; padding: 10px; font-size: 1.1em; border: 2px solid #e74c3c;
+                                          border-radius: 5px; background: rgba(0,0,0,0.3); color: white;">
+                        </div>
+                        <button onclick="executeSell()" class="menu-btn" style="width: 100%; background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); border-color: #e74c3c;">
+                            <div style="font-size: 1.2em;">✓ Execute Sell Order</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="trade-message" style="margin-top: 20px;"></div>
+
                 <button class="back-btn" onclick="showScreen('menu-screen')">← Back to Menu</button>
             </div>
         </div>
@@ -704,6 +764,99 @@
             }
         }
 
+        async function showTradeScreen() {
+            showScreen('trade-screen');
+            // Load buying power
+            try {
+                const response = await fetch('/api/balance');
+                const data = await response.json();
+                document.getElementById('trade-buying-power').textContent =
+                    `$${data.buying_power.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error fetching buying power:', error);
+            }
+            // Default to buy form
+            showTradeType('buy');
+        }
+
+        function showTradeType(type) {
+            // Reset forms
+            document.getElementById('buy-form').style.display = 'none';
+            document.getElementById('sell-form').style.display = 'none';
+            document.getElementById('trade-message').innerHTML = '';
+
+            // Update tab styling
+            document.getElementById('buy-tab').style.background =
+                type === 'buy' ? 'linear-gradient(180deg, #27ae60 0%, #229954 100%)' : '';
+            document.getElementById('sell-tab').style.background =
+                type === 'sell' ? 'linear-gradient(180deg, #e74c3c 0%, #c0392b 100%)' : '';
+
+            // Show selected form
+            if (type === 'buy') {
+                document.getElementById('buy-form').style.display = 'block';
+                document.getElementById('buy-symbol').focus();
+            } else {
+                document.getElementById('sell-form').style.display = 'block';
+                document.getElementById('sell-symbol').focus();
+            }
+        }
+
+        async function executeBuy() {
+            const symbol = document.getElementById('buy-symbol').value.toUpperCase().trim();
+            const amount = parseFloat(document.getElementById('buy-amount').value);
+
+            if (!symbol || !amount || amount <= 0) {
+                showTradeMessage('Please enter valid symbol and amount', 'error');
+                return;
+            }
+
+            showTradeMessage('Processing buy order...', 'info');
+
+            // Placeholder for actual API call
+            // In production, this would call the Robinhood MCP
+            setTimeout(() => {
+                showTradeMessage(
+                    `✓ Buy order simulated: $${amount.toFixed(2)} of ${symbol}<br>` +
+                    `<small>In production, this will execute through Robinhood MCP</small>`,
+                    'success'
+                );
+                // Clear form
+                document.getElementById('buy-symbol').value = '';
+                document.getElementById('buy-amount').value = '';
+            }, 1500);
+        }
+
+        async function executeSell() {
+            const symbol = document.getElementById('sell-symbol').value.toUpperCase().trim();
+            const quantity = parseFloat(document.getElementById('sell-quantity').value);
+
+            if (!symbol || !quantity || quantity <= 0) {
+                showTradeMessage('Please enter valid symbol and quantity', 'error');
+                return;
+            }
+
+            showTradeMessage('Processing sell order...', 'info');
+
+            // Placeholder for actual API call
+            setTimeout(() => {
+                showTradeMessage(
+                    `✓ Sell order simulated: ${quantity} ${symbol}<br>` +
+                    `<small>In production, this will execute through Robinhood MCP</small>`,
+                    'success'
+                );
+                // Clear form
+                document.getElementById('sell-symbol').value = '';
+                document.getElementById('sell-quantity').value = '';
+            }, 1500);
+        }
+
+        function showTradeMessage(message, type) {
+            const msgEl = document.getElementById('trade-message');
+            const className = type === 'error' ? 'error-message' :
+                            type === 'success' ? 'success-message' : 'info-text';
+            msgEl.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
         async function logout() {
             try {
                 await fetch('/api/logout', { method: 'POST' });
@@ -811,17 +964,30 @@
                     showPositions();
                 } else if (e.key === '3') {
                     e.preventDefault();
-                    showScreen('trade-screen');
+                    showTradeScreen();
                 } else if (e.key === '4' || e.key === 'Escape') {
                     e.preventDefault();
                     logout();
                 }
             }
 
+            // Trade screen - B for buy, S for sell
+            else if (activeScreen.id === 'trade-screen') {
+                if (e.key === 'b' || e.key === 'B') {
+                    e.preventDefault();
+                    showTradeType('buy');
+                } else if (e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    showTradeType('sell');
+                } else if (e.key === 'Escape' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    showScreen('menu-screen');
+                }
+            }
+
             // Other screens - Escape or Backspace to go back
             else if (activeScreen.id === 'balance-screen' ||
-                     activeScreen.id === 'positions-screen' ||
-                     activeScreen.id === 'trade-screen') {
+                     activeScreen.id === 'positions-screen') {
                 if (e.key === 'Escape' || e.key === 'Backspace') {
                     e.preventDefault();
                     showScreen('menu-screen');

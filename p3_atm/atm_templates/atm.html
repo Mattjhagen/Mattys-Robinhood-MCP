@@ -1051,6 +1051,52 @@
         // Initialize
         initTicker();
     </script>
+    <script src="arrow_keys.js"></script>
+    <script>
+        // ARROW KEY NAVIGATION
+        let focusIndex = 0;
+        let focusableElements = [];
+
+        function updateFocusableElements() {
+            const activeScreen = document.querySelector(".screen.active");
+            if (!activeScreen) return;
+            focusableElements = Array.from(activeScreen.querySelectorAll("button:not([disabled]), input:not([disabled]), .holding-item")).filter(el => {
+                const style = window.getComputedStyle(el);
+                return style.display !== "none" && style.visibility !== "hidden";
+            });
+        }
+
+        function focusElement(index) {
+            if (focusableElements.length === 0) return;
+            focusIndex = ((index % focusableElements.length) + focusableElements.length) % focusableElements.length;
+            focusableElements.forEach(el => { el.style.outline = "none"; el.style.boxShadow = ""; el.style.transform = ""; });
+            const element = focusableElements[focusIndex];
+            if (element) {
+                element.style.outline = "3px solid #00C805";
+                element.style.boxShadow = "0 0 20px rgba(0, 200, 5, 0.5)";
+                element.style.transform = "scale(1.05)";
+                element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.target.matches("input") && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
+            switch(e.key) {
+                case "ArrowDown": case "ArrowRight":
+                    e.preventDefault(); updateFocusableElements(); focusElement(focusIndex + 1); break;
+                case "ArrowUp": case "ArrowLeft":
+                    e.preventDefault(); updateFocusableElements(); focusElement(focusIndex - 1); break;
+                case "Enter":
+                    if (!e.target.matches("input")) { e.preventDefault(); if (focusableElements[focusIndex]) focusableElements[focusIndex].click(); }
+                    break;
+            }
+        });
+
+        const _origShow = window.showScreen; window.showScreen = function(s) { if (_origShow) _origShow(s); setTimeout(() => { focusIndex = 0; updateFocusableElements(); focusElement(0); }, 100); };
+        setTimeout(() => { updateFocusableElements(); focusElement(0); }, 500);
+        console.log("⬆️⬇️⬅️➡️ Arrow keys enabled!");
+    </script>
+
 </body>
 </html>
     <script>

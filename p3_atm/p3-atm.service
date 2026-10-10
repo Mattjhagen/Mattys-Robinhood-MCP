@@ -1,0 +1,26 @@
+[Unit]
+Description=P3 Robinhood ATM Web Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=matt
+Group=matt
+WorkingDirectory=/home/matt/Mattys-Robinhood-MCP/p3_atm
+ExecStart=/usr/bin/python3 /home/matt/Mattys-Robinhood-MCP/p3_atm/atm_server.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/atm.log
+StandardError=append:/tmp/atm.log
+
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

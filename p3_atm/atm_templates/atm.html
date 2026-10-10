@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Robinhood ATM</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
     <style>
         * {
             margin: 0;
@@ -68,6 +74,61 @@
 
         .ticker-change.down {
             background: rgba(255, 80, 0, 0.15);
+            color: #FF5000;
+        }
+
+        /* Trading Status Indicator */
+        .trading-status {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.operational {
+            background: #00C805;
+            box-shadow: 0 0 10px rgba(0, 200, 5, 0.5);
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        .status-dot.down {
+            background: #FF5000;
+            box-shadow: 0 0 10px rgba(255, 80, 0, 0.5);
+            animation: pulse-red 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 10px rgba(0, 200, 5, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(0, 200, 5, 0.8); }
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 80, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 80, 0, 0.8); }
+        }
+
+        .status-text {
+            font-size: 0.75em;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .status-dot.operational + .status-text {
+            color: #00C805;
+        }
+
+        .status-dot.down + .status-text {
             color: #FF5000;
         }
 
@@ -720,6 +781,43 @@
             font-size: 0.95em;
         }
 
+        .atm-receipt-positions {
+            margin-top: 20px;
+        }
+
+        .atm-receipt-position-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dotted #ccc;
+            font-size: 0.95em;
+        }
+
+        .atm-receipt-position-line:last-child {
+            border-bottom: none;
+        }
+
+        .atm-receipt-position-symbol {
+            font-weight: 700;
+            font-size: 1em;
+            min-width: 60px;
+        }
+
+        .atm-receipt-position-quantity {
+            font-size: 0.85em;
+            color: #666;
+            flex: 1;
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        .atm-receipt-position-value {
+            font-weight: 600;
+            text-align: right;
+            min-width: 80px;
+        }
+
         .atm-receipt-footer {
             text-align: center;
             margin-top: 30px;
@@ -844,6 +942,11 @@
         <div class="ticker-content" id="ticker-content">
             <!-- Populated by JavaScript -->
         </div>
+        <!-- Trading Status Indicator -->
+        <div class="trading-status" id="trading-status">
+            <div class="status-dot down" id="status-dot"></div>
+            <span class="status-text" id="status-text">Checking...</span>
+        </div>
     </div>
 
     <!-- Main ATM Container -->
@@ -942,9 +1045,25 @@
                         <div style="font-size: 1.2em; font-weight: 600;" id="quick-buying-power">$0.00</div>
                     </div>
 
+                    <div class="atm-receipt-section" id="quick-profit-loss-section" style="display: none;">
+                        <div class="atm-receipt-label">TODAY'S PERFORMANCE</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <div>
+                                <div id="quick-profit-loss-amount" style="font-size: 1.3em; font-weight: 700;">$0.00</div>
+                                <div id="quick-profit-loss-pct" style="font-size: 0.95em; margin-top: 4px;">0.00%</div>
+                            </div>
+                            <div id="quick-profit-loss-icon" style="font-size: 2em;">📈</div>
+                        </div>
+                    </div>
+
                     <div class="atm-receipt-accounts" id="quick-accounts-list">
                         <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">ACCOUNT BREAKDOWN</div>
                         <!-- Accounts will be loaded here -->
+                    </div>
+
+                    <div class="atm-receipt-positions" id="quick-positions-list">
+                        <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">YOUR POSITIONS</div>
+                        <!-- Positions will be loaded here -->
                     </div>
 
                     <div class="atm-receipt-footer">
@@ -1113,6 +1232,34 @@
             tickerContent.innerHTML = tickerHTML + tickerHTML;
         }
 
+        // Trading status check
+        async function checkTradingStatus() {
+            try {
+                const response = await fetch('/api/trading-status');
+                const data = await response.json();
+
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+
+                if (data.status === 'operational') {
+                    statusDot.className = 'status-dot operational';
+                    statusText.textContent = 'Trading Active';
+                } else {
+                    statusDot.className = 'status-dot down';
+                    statusText.textContent = 'Trading Offline';
+                }
+            } catch (error) {
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                statusDot.className = 'status-dot down';
+                statusText.textContent = 'Status Unknown';
+            }
+        }
+
+        // Check trading status on load and every 30 seconds
+        checkTradingStatus();
+        setInterval(checkTradingStatus, 30000);
+
         // Screen management
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1217,6 +1364,34 @@
                     document.getElementById('quick-buying-power').textContent =
                         `$${totalBuyingPower.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
+                    // Profit/Loss display
+                    if (data.profit_loss && data.profit_loss.amount !== undefined) {
+                        const profitLoss = parseFloat(data.profit_loss.amount);
+                        const profitLossPct = parseFloat(data.profit_loss.percentage);
+
+                        if (profitLoss !== 0) {
+                            const section = document.getElementById('quick-profit-loss-section');
+                            const amountEl = document.getElementById('quick-profit-loss-amount');
+                            const pctEl = document.getElementById('quick-profit-loss-pct');
+                            const iconEl = document.getElementById('quick-profit-loss-icon');
+
+                            section.style.display = 'block';
+
+                            const isPositive = profitLoss >= 0;
+                            const color = isPositive ? '#00C805' : '#FF5000';
+                            const sign = isPositive ? '+' : '';
+                            const icon = isPositive ? '📈' : '📉';
+
+                            amountEl.textContent = `${sign}$${Math.abs(profitLoss).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            amountEl.style.color = color;
+
+                            pctEl.textContent = `${sign}${profitLossPct.toFixed(2)}%`;
+                            pctEl.style.color = color;
+
+                            iconEl.textContent = icon;
+                        }
+                    }
+
                     // Account breakdown
                     const accountsList = document.getElementById('quick-accounts-list');
                     if (data.accounts.length > 0) {
@@ -1230,6 +1405,42 @@
                         accountsList.innerHTML = `
                             <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">ACCOUNT BREAKDOWN</div>
                             ${accountsHTML}
+                        `;
+                    }
+
+                    // Positions breakdown
+                    const positionsList = document.getElementById('quick-positions-list');
+                    if (data.positions && data.positions.length > 0) {
+                        const positionsHTML = data.positions.map(pos => {
+                            const profitLoss = pos.profit_loss || 0;
+                            const isPositive = profitLoss >= 0;
+                            const plColor = isPositive ? '#00C805' : '#FF5000';
+                            const plSign = isPositive ? '+' : '';
+                            const plText = pos.profit_loss !== undefined
+                                ? `${plSign}$${Math.abs(profitLoss).toFixed(2)} (${pos.change})`
+                                : '';
+
+                            return `
+                            <div class="atm-receipt-position-line">
+                                <div class="atm-receipt-position-symbol">${pos.symbol}</div>
+                                <div class="atm-receipt-position-quantity">
+                                    ${parseFloat(pos.quantity).toFixed(8)}<br>
+                                    <span style="color: ${plColor}; font-size: 0.85em;">${plText}</span>
+                                </div>
+                                <div class="atm-receipt-position-value">$${parseFloat(pos.value || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                        `}).join('');
+
+                        positionsList.innerHTML = `
+                            <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">YOUR POSITIONS</div>
+                            ${positionsHTML}
+                        `;
+                    } else {
+                        positionsList.innerHTML = `
+                            <div class="atm-receipt-label" style="margin-top: 20px; margin-bottom: 10px;">YOUR POSITIONS</div>
+                            <div style="text-align: center; color: #999; padding: 10px 0; font-size: 0.9em;">
+                                No positions found
+                            </div>
                         `;
                     }
                 }
@@ -1269,8 +1480,13 @@
             }
         }
 
-        function loadHoldings(positions) {
-            const listEl = document.getElementById('holdings-list');
+        function loadHoldings(positions, targetElementId = 'holdings-list') {
+            const listEl = document.getElementById(targetElementId);
+
+            if (!listEl) {
+                console.error(`Element ${targetElementId} not found`);
+                return;
+            }
 
             if (!positions || positions.length === 0) {
                 listEl.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">No holdings found</div>';
@@ -1279,13 +1495,18 @@
 
             listEl.innerHTML = positions.map(pos => {
                 const isPositive = pos.change && pos.change.startsWith('+');
+                const profitLoss = pos.profit_loss || 0;
+                const plColor = profitLoss >= 0 ? '#00C805' : '#FF5000';
+                const plSign = profitLoss >= 0 ? '+' : '';
+
                 return `
                     <div class="holding-item">
                         <div class="holding-left">
                             <div class="holding-icon">${pos.symbol[0]}</div>
                             <div class="holding-info">
                                 <h4>${pos.symbol}</h4>
-                                <p>${pos.quantity.toFixed(8)} shares</p>
+                                <p>${pos.quantity.toFixed(8)} ${pos.symbol}</p>
+                                ${pos.profit_loss !== undefined ? `<p style="color: ${plColor}; font-size: 0.85em; margin-top: 4px;">${plSign}$${Math.abs(profitLoss).toFixed(2)} (${pos.change})</p>` : ''}
                             </div>
                         </div>
                         <div class="holding-right">
@@ -1304,10 +1525,17 @@
             listEl.innerHTML = '<div class="loading"><div class="spinner"></div>Loading positions...</div>';
 
             try {
-                const response = await fetch('/api/positions');
+                const response = await fetch('/api/portfolio');
                 const data = await response.json();
-                loadHoldings(data.positions || []);
+
+                // Use loadHoldings but target positions-list element
+                if (data.crypto_positions && data.crypto_positions.length > 0) {
+                    loadHoldings(data.crypto_positions, 'positions-list');
+                } else {
+                    listEl.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">No positions found</div>';
+                }
             } catch (error) {
+                console.error('Error loading positions:', error);
                 listEl.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">Error loading positions</div>';
             }
         }
@@ -1519,16 +1747,24 @@
         // Initialize
         initTicker();
     </script>
-    <script src="arrow_keys.js"></script>
+    <!-- Arrow key navigation is inline below -->
     <script>
         // ARROW KEY NAVIGATION
         let focusIndex = 0;
         let focusableElements = [];
 
         function updateFocusableElements() {
+            // Include nav-items from sidebar plus elements from active screen
+            const navItems = Array.from(document.querySelectorAll(".nav-item"));
             const activeScreen = document.querySelector(".screen.active");
-            if (!activeScreen) return;
-            focusableElements = Array.from(activeScreen.querySelectorAll("button:not([disabled]), input:not([disabled]), .holding-item")).filter(el => {
+
+            let screenElements = [];
+            if (activeScreen) {
+                screenElements = Array.from(activeScreen.querySelectorAll("button:not([disabled]), input:not([disabled]), .holding-item"));
+            }
+
+            // Combine nav items and screen elements
+            focusableElements = [...navItems, ...screenElements].filter(el => {
                 const style = window.getComputedStyle(el);
                 return style.display !== "none" && style.visibility !== "hidden";
             });
@@ -1591,6 +1827,12 @@
             // Only start if authenticated
             if (!authenticated) return;
 
+            // If warning is currently showing, hide it
+            const overlay = document.getElementById('timeout-overlay');
+            if (overlay.classList.contains('active')) {
+                hideTimeoutWarning();
+            }
+
             clearAllTimers();
 
             // Start 2-minute inactivity timer
@@ -1617,6 +1859,16 @@
                     logout(); // Auto logout
                 }
             }, 1000);
+
+            // Add Enter key listener for this modal
+            const enterHandler = (e) => {
+                if (e.key === 'Enter' && overlay.classList.contains('active')) {
+                    e.preventDefault();
+                    resetInactivityTimer();
+                    document.removeEventListener('keydown', enterHandler);
+                }
+            };
+            document.addEventListener('keydown', enterHandler);
         }
 
         function hideTimeoutWarning() {

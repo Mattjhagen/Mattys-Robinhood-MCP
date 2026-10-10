@@ -1,0 +1,112 @@
+═══════════════════════════════════════════════════════════════════
+     🔑 GENERATE YOUR ROBINHOOD API KEYS IN 5 MINUTES!
+═══════════════════════════════════════════════════════════════════
+
+📍 STEP 1: GO TO ROBINHOOD WEB (CLASSIC)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ https://robinhood.com/login                                 │
+   └─────────────────────────────────────────────────────────────┘
+
+   Sign in with your regular Robinhood account
+
+
+📍 STEP 2: FIND API SETTINGS
+
+   Click: Profile Icon (top right) → Settings → Crypto
+
+   OR try:
+   - Settings → Security → API Access
+   - Settings → Developer → API Keys
+   - Account → API Management
+
+
+📍 STEP 3: CREATE NEW API KEY
+
+   Click: "Add key" or "Create API Key"
+
+   ✅ Select these permissions:
+      □ Read crypto accounts
+      □ Read crypto holdings
+      □ Read crypto orders
+      □ Read crypto products
+      □ Read crypto quotes
+      ☑ Place crypto orders with fee tiers (v2) ← IMPORTANT!
+
+
+📍 STEP 4: SAVE YOUR KEYS IMMEDIATELY!
+
+   You'll get:
+
+   ┌─────────────────────────────────────────────────────────────┐
+   │ API Key ID:                                                 │
+   │ rh-api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                │
+   │                                                             │
+   │ Private Key:                                                │
+   │ -----BEGIN PRIVATE KEY-----                                │
+   │ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAo...       │
+   │ (many lines)                                                │
+   │ -----END PRIVATE KEY-----                                  │
+   └─────────────────────────────────────────────────────────────┘
+
+   ⚠️  YOU CAN ONLY SEE THE PRIVATE KEY ONCE!
+   ⚠️  COPY IT IMMEDIATELY!
+
+
+📍 STEP 5: INSTALL ON R510
+
+   On your r510 server, run these commands:
+
+   # Create directory
+   mkdir -p ~/.robinhood
+   chmod 700 ~/.robinhood
+
+   # Save private key
+   nano ~/.robinhood/trading_key.pem
+   # Paste the ENTIRE key (including BEGIN/END lines)
+   # Save: Ctrl+X, then Y, then Enter
+
+   # Secure it
+   chmod 600 ~/.robinhood/trading_key.pem
+
+   # Add API key to environment
+   nano ~/.bashrc
+   # Add these two lines at the end:
+   export ROBINHOOD_API_KEY="rh-api-your-key-here"
+   export ROBINHOOD_PRIVATE_KEY_PATH="$HOME/.robinhood/trading_key.pem"
+   # Save: Ctrl+X, then Y, then Enter
+
+   # Reload environment
+   source ~/.bashrc
+
+
+📍 STEP 6: TEST IT!
+
+   cd ~/Mattys-Robinhood-MCP/p3_atm
+   python3 trading_api.py
+
+   ✅ Should show:
+   "Trading API initialized with PEM key"
+   "Authenticated: True"
+
+
+📍 STEP 7: ENABLE AUTO-TRADING!
+
+   ./run_trading_loop.sh
+
+   ✅ Should show:
+   "Status: active" (not "monitoring_only")
+
+
+═══════════════════════════════════════════════════════════════════
+
+🎉 THAT'S IT! Your bot will now trade automatically every 15 minutes!
+
+Watch it work:
+   tail -f /tmp/trading_loop.log
+
+═══════════════════════════════════════════════════════════════════
+
+📚 Detailed guide: GET_API_KEYS_NOW.md
+🔧 API documentation: https://docs.robinhood.com/crypto/trading/
+
+═══════════════════════════════════════════════════════════════════

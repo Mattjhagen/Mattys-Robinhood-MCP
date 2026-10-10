@@ -1,25 +1,56 @@
 # Matty's Robinhood MCP Configuration
 
-This repository contains the Model Context Protocol (MCP) configuration for connecting Claude Code to Robinhood for automated trading and portfolio monitoring.
+This repository contains the Model Context Protocol (MCP) configuration for connecting Claude Code to Robinhood for portfolio monitoring and the P3 ATM interface.
 
-## Overview
+## Current Status
 
-This setup enables Claude to interact with your Robinhood account through the official Robinhood MCP server. The configuration includes:
+**✅ What Works Now:**
+- Real-time portfolio monitoring via read-only MCP
+- Account balance and positions tracking  
+- P3 ATM web interface on port 5050
+- Holdings and allocation data
 
-- **Trading Account**: Agentic-enabled account for automated trading
-- **Price Alerts**: Configured alerts for BTC, ETH, and DOGE
-- **Watchlists**: Custom lists for tracking assets
-- **Portfolio Monitoring**: Real-time account value and positions tracking
+**⏳ What's Coming:**
+- **Agentic Trading**: On Gold Card waitlist (invite pending)
+- **Automated Trading**: Requires Gold Card approval
+- **Trade Execution**: Will be enabled after Gold Card access
 
 ## Account Status
 
-- **Account Type**: Individual (Limited Margin)
-- **Agentic Trading**: ✓ Enabled
-- **Current Portfolio Value**: ~$21.85 (primarily crypto holdings)
+- **Account Number**: 311223129172
+- **Account Type**: Individual
+- **Agentic Trading**: ❌ Waitlisted (Gold Card required)
+- **Current Access**: Read-only via npm MCP package
+- **Current Holdings**: $0.26 (1 ADA + small ETH amount)
 
 ## MCP Server Configuration
 
-The Robinhood MCP server is configured in Claude's settings at `~/.claude.json`:
+**Current Configuration** (Read-Only npm package):
+
+The Robinhood MCP server is configured in `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "robinhood-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["robinhood-mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+API keys are loaded from `~/.bashrc`:
+```bash
+export ROBINHOOD_API_KEY="your-rh-api-key"
+export ROBINHOOD_PRIVATE_KEY="your-private-key"
+```
+
+### Future Configuration (When Gold Card Approved)
+
+Once you receive Gold Card access, you'll use the trading server:
 
 ```json
 {
@@ -32,46 +63,59 @@ The Robinhood MCP server is configured in Claude's settings at `~/.claude.json`:
 }
 ```
 
-### Alternative Configuration (Read-Only)
-
-For a read-only MCP server using the npm package:
-
-```json
-{
-  "mcpServers": {
-    "robinhood-mcp-readonly": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["robinhood-mcp"],
-      "env": {}
-    }
-  }
-}
-```
-
 ## Setup Instructions
 
-### 1. Enable MCP in Claude Code
+### 1. Read-Only Access (Current Setup) ✅
 
-1. Open Claude Code settings
-2. Navigate to MCP Servers section
-3. Add the Robinhood MCP server configuration
-4. Authenticate with your Robinhood account using:
-   ```bash
-   /mcp
-   ```
+Your ATM is already working with read-only access:
 
-### 2. Authenticate
+```bash
+# API keys should be in ~/.bashrc
+echo $ROBINHOOD_API_KEY
+echo $ROBINHOOD_PRIVATE_KEY
 
-Run the `/mcp` command in Claude Code and follow the authentication flow to connect your Robinhood account.
+# If not set, add them:
+export ROBINHOOD_API_KEY="rh-api-your-key-here"
+export ROBINHOOD_PRIVATE_KEY="your-agent-key-here"
+```
 
-### 3. Configure Agentic Trading
+### 2. Enable Trading (Choose ONE)
 
-To enable automated trading:
-1. Log into your Robinhood account on the web or mobile app
-2. Navigate to Account Settings → Agentic Trading
-3. Enable agentic trading for the desired account
-4. Set your trading limits and restrictions
+**Option A: Wait for Gold Card** (Recommended)
+- ✅ Already on waitlist
+- ✅ Zero setup needed
+- ✅ Trading enables automatically
+- See: `HOW_TO_GET_TRADING.md`
+
+**Option B: Request Trading API Keys**
+- Contact Robinhood support for PEM keys
+- Manual setup required
+- See: `GET_TRADING_API_KEYS.md`
+
+### 3. Auto-Start Service ✅
+
+Already installed! The ATM starts automatically on boot:
+
+```bash
+# Check status
+sudo systemctl status p3-atm
+
+# Access ATM
+http://localhost:5050
+http://100.103.3.35:5050
+```
+
+## While Waiting for Gold Card
+
+You can still do a lot with read-only access:
+
+1. **Monitor Portfolio** - Track your holdings in real-time
+2. **Price Tracking** - Get live quotes and market data
+3. **Build UI** - Develop and test the ATM interface
+4. **Plan Strategies** - Design trading algorithms for when trading is enabled
+5. **Historical Analysis** - Review past orders and performance
+
+The P3 ATM interface works fully in read-only mode and will automatically support trading once your Gold Card is approved.
 
 ## Current Configuration
 
@@ -95,19 +139,30 @@ To enable automated trading:
 3. **Cryptos to Watch** 👾 - 1 item
 4. **Options Watchlist** 💡 - Empty (options not enabled)
 
-## Available MCP Tools
+## Available MCP Tools (Current - Read-Only)
 
-The Robinhood MCP provides access to:
+The npm `robinhood-mcp` package currently provides these **read-only** tools:
 
-- **Account Management**: `get_accounts`, `get_portfolio`
-- **Trading**: `place_equity_order`, `place_crypto_order`, `place_option_order`
-- **Market Data**: `get_equity_quotes`, `get_crypto_quotes`, `get_option_quotes`
-- **Positions**: `get_equity_positions`, `get_crypto_positions`, `get_option_positions`
-- **Orders**: `get_equity_orders`, `get_crypto_orders`, `get_option_orders`
-- **Alerts**: `get_alerts`, `create_alert`, `update_alert`, `delete_alert`
-- **Watchlists**: `get_watchlists`, `add_to_watchlist`, `remove_from_watchlist`
-- **Research**: `get_equity_news`, `get_equity_fundamentals`, `get_financials`
-- **Scanners**: `get_scans`, `create_scan`, `run_scan`
+- ✅ `get_account` - View account information
+- ✅ `get_holdings` - View crypto holdings
+- ✅ `get_allocation` - View portfolio allocation
+- ✅ `get_best_bid_ask` - Get real-time quotes
+- ✅ `get_orders` - View order history
+- ✅ `get_market_hours` - Check market status
+
+**Not available until Gold Card approval:**
+- ❌ Trading: `place_order`, `buy_crypto`, `sell_crypto`
+- ❌ Alerts: `create_alert`, `update_alert`, `delete_alert`
+- ❌ Watchlists: Write operations
+
+## P3 ATM Interface
+
+The repository includes a web-based ATM interface at `p3_atm/`:
+
+- **Location**: `http://localhost:5050`
+- **Features**: Balance display, position viewing, account info
+- **Backend**: Python Flask server with MCP bridge
+- **Auto-Start**: systemd service (install with `sudo bash install-service.sh`)
 
 ## Security Considerations
 
@@ -119,51 +174,51 @@ The Robinhood MCP provides access to:
 4. **Monitor automated trades** regularly
 5. **Start with small amounts** when testing automated strategies
 
-## Example Claude Commands
+## Example Commands
 
-### Check Portfolio Status
+### ✅ What Works Now (Read-Only)
+
 ```
-Check my Robinhood portfolio status
+Check my Robinhood account balance
+Show my crypto holdings
+What's the current Bitcoin price?
+Show my portfolio allocation
+Check my order history
 ```
 
-### Place a Trade
-```
-Buy $10 worth of Bitcoin on my agentic account
-```
+### ⏳ What Will Work After Gold Card
 
-### Set Up Alerts
 ```
+Buy $10 worth of Bitcoin
+Sell 0.001 BTC
 Create an alert when Bitcoin goes above $100,000
-```
-
-### View Positions
-```
-Show me all my crypto positions
+Set up automated trading strategy
 ```
 
 ## Troubleshooting
 
-### Authentication Issues
-
-If you encounter authentication errors:
-1. Run `/mcp` to re-authenticate
-2. Check that your session hasn't expired
-3. Verify your account has agentic trading enabled
-
-### Trading Restrictions
-
-If trades are failing:
-1. Verify your account type supports the asset class
-2. Check your buying power with `get_portfolio`
-3. Ensure you're within your configured trading limits
-
 ### MCP Connection Issues
 
 If the MCP server won't connect:
-1. Check your internet connection
-2. Verify the MCP server URL is correct
-3. Try restarting Claude Code
-4. Check Robinhood's service status
+1. Verify API keys are loaded: `echo $ROBINHOOD_API_KEY`
+2. Check `~/.bashrc` has the export statements
+3. Restart your shell or run `source ~/.bashrc`
+4. Try running `npx robinhood-mcp` manually to test
+
+### P3 ATM Not Starting
+
+If the ATM interface isn't working:
+1. Check if service is running: `sudo systemctl status p3-atm`
+2. View logs: `sudo journalctl -u p3-atm -n 50`
+3. Verify port 5050 isn't in use: `lsof -i:5050`
+4. Restart: `sudo systemctl restart p3-atm`
+
+### "Mock Mode" or No Data
+
+If you see mock/placeholder data:
+1. Verify MCP bridge is working: `python3 p3_atm/mcp_bridge.py`
+2. Check that `robinhood-mcp` package is installed: `npx robinhood-mcp --version`
+3. Verify API keys are valid (check Robinhood developer console)
 
 ## Resources
 

@@ -420,6 +420,16 @@
             <!-- Main Menu Screen -->
             <div id="menu-screen" class="screen">
                 <div class="screen-title">Main Menu</div>
+
+                <!-- Quick Balance Card -->
+                <div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                    <div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">Quick Balance</div>
+                    <div style="font-size: 2em; color: #27ae60; font-weight: bold;" id="quick-balance">$0.00</div>
+                    <div style="font-size: 1.2em; color: #3498db; margin-top: 5px;" id="quick-trend">
+                        <span id="trend-icon">📊</span> <span id="trend-text">--</span>
+                    </div>
+                </div>
+
                 <div class="info-text" style="margin-bottom: 20px;">Select a transaction:</div>
                 <div class="menu-grid">
                     <button class="menu-btn" onclick="showBalance()">
@@ -532,6 +542,41 @@
 
             if (screenId === 'menu-screen') {
                 updateTimestamp('menu-timestamp');
+                updateQuickBalance(); // Load quick balance when showing menu
+            }
+        }
+
+        async function updateQuickBalance() {
+            try {
+                const response = await fetch('/api/portfolio');
+                const data = await response.json();
+
+                const totalValue = parseFloat(data.total_value || 0);
+                const startValue = 40.19; // Starting value for trend calculation
+                const change = totalValue - startValue;
+                const changePercent = (change / startValue * 100).toFixed(2);
+
+                // Update quick balance display
+                document.getElementById('quick-balance').textContent =
+                    `$${totalValue.toFixed(2)}`;
+
+                // Update trend indicator
+                const trendIcon = document.getElementById('trend-icon');
+                const trendText = document.getElementById('trend-text');
+
+                if (change > 0) {
+                    trendIcon.textContent = '📈';
+                    trendText.innerHTML = `<span style="color: #27ae60;">+$${change.toFixed(2)} (+${changePercent}%)</span>`;
+                } else if (change < 0) {
+                    trendIcon.textContent = '📉';
+                    trendText.innerHTML = `<span style="color: #e74c3c;">$${change.toFixed(2)} (${changePercent}%)</span>`;
+                } else {
+                    trendIcon.textContent = '➡️';
+                    trendText.innerHTML = `<span style="color: #95a5a6;">No change</span>`;
+                }
+            } catch (error) {
+                console.error('Error fetching quick balance:', error);
+                document.getElementById('quick-balance').textContent = '--';
             }
         }
 
@@ -633,20 +678,24 @@
                 const data = await response.json();
 
                 if (data.positions && data.positions.length > 0) {
-                    listEl.innerHTML = data.positions.map(pos => `
+                    listEl.innerHTML = data.positions.map(pos => {
+                        const isPositive = pos.change.startsWith('+');
+                        const trendIcon = isPositive ? '📈' : '📉';
+                        return `
                         <div class="position-item">
                             <div>
-                                <div class="position-symbol">${pos.symbol}</div>
+                                <div class="position-symbol">${trendIcon} ${pos.symbol}</div>
                                 <div class="position-quantity">${pos.quantity.toFixed(8)}</div>
                             </div>
                             <div class="position-details">
                                 <div class="position-value">$${pos.value.toFixed(2)}</div>
-                                <div class="position-change ${pos.change.startsWith('+') ? 'positive' : 'negative'}">
+                                <div class="position-change ${isPositive ? 'positive' : 'negative'}">
                                     ${pos.change}
                                 </div>
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 } else {
                     listEl.innerHTML = '<div class="info-text">No positions found</div>';
                 }
@@ -699,7 +748,7 @@
                 `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
         }
 
-        // Update timestamps every second
+        // Update timestamps every second and refresh quick balance
         setInterval(() => {
             const activeScreen = document.querySelector('.screen.active');
             if (activeScreen.id === 'menu-screen') {
@@ -708,6 +757,14 @@
                 updateTimestamp('balance-timestamp');
             }
         }, 1000);
+
+        // Refresh quick balance every 30 seconds if on menu screen
+        setInterval(() => {
+            const activeScreen = document.querySelector('.screen.active');
+            if (activeScreen && activeScreen.id === 'menu-screen' && authenticated) {
+                updateQuickBalance();
+            }
+        }, 30000);
 
         // ===== KEYBOARD NAVIGATION =====
 

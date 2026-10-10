@@ -1053,3 +1053,195 @@
     </script>
 </body>
 </html>
+    <script>
+        // ============================================================================
+        // KEYBOARD NAVIGATION - Full support, no mouse needed!
+        // ============================================================================
+
+        document.addEventListener('keydown', (e) => {
+            const activeScreen = document.querySelector('.screen.active');
+            if (!activeScreen) return;
+
+            // PIN screen - number keys
+            if (activeScreen.id === 'pin-screen') {
+                if (e.key >= '0' && e.key <= '9') {
+                    e.preventDefault();
+                    addPinDigit(e.key);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitPin();
+                } else if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    if (pinEntry.length > 0) {
+                        pinEntry = pinEntry.slice(0, -1);
+                        updatePinDisplay();
+                    }
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    clearPin();
+                    showScreen('welcome-screen');
+                }
+            }
+
+            // Welcome screen
+            else if (activeScreen.id === 'welcome-screen') {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    showScreen('pin-screen');
+                }
+            }
+
+            // Home screen - number shortcuts
+            else if (activeScreen.id === 'home-screen') {
+                if (e.key === '1' || e.key === 'b' || e.key === 'B') {
+                    e.preventDefault();
+                    showScreen('trade-screen');
+                    selectTradeType('buy');
+                } else if (e.key === '2' || e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    showScreen('trade-screen');
+                    selectTradeType('sell');
+                } else if (e.key === '3') {
+                    e.preventDefault();
+                    showScreen('balance-screen');
+                } else if (e.key === '4' || e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    showScreen('positions-screen');
+                } else if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q') {
+                    e.preventDefault();
+                    logout();
+                }
+            }
+
+            // Trade screen
+            else if (activeScreen.id === 'trade-screen') {
+                if (e.key === 'b' || e.key === 'B') {
+                    e.preventDefault();
+                    selectTradeType('buy');
+                } else if (e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    selectTradeType('sell');
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    showScreen('home-screen');
+                } else if (e.key === 'Enter' && !e.target.matches('input')) {
+                    e.preventDefault();
+                    executeTrade();
+                }
+            }
+
+            // Other screens - Escape to go back
+            else if (activeScreen.id === 'positions-screen' || 
+                     activeScreen.id === 'balance-screen') {
+                if (e.key === 'Escape' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    showScreen('home-screen');
+                }
+            }
+
+            // Global shortcuts
+            if (e.key === 'h' || e.key === 'H') {
+                if (!e.target.matches('input')) {
+                    e.preventDefault();
+                    showKeyboardHelp();
+                }
+            }
+        });
+
+        // Show keyboard shortcuts help
+        function showKeyboardHelp() {
+            const helpHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); 
+                            z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 20px;"
+                     id="keyboard-help-overlay" onclick="this.remove()">
+                    <div style="background: #0a0a0a; border: 2px solid #00C805; border-radius: 16px; padding: 40px; 
+                                max-width: 600px; color: white;" onclick="event.stopPropagation()">
+                        <h2 style="color: #00C805; margin-bottom: 30px; font-size: 2em;">⌨️ Keyboard Shortcuts</h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; line-height: 2;">
+                            <div>
+                                <strong style="color: #00C805;">Welcome Screen:</strong><br>
+                                <code>ENTER</code> - Enter PIN<br><br>
+
+                                <strong style="color: #00C805;">PIN Entry:</strong><br>
+                                <code>0-9</code> - Enter digits<br>
+                                <code>ENTER</code> - Submit<br>
+                                <code>BACKSPACE</code> - Delete<br>
+                                <code>ESC</code> - Cancel<br><br>
+
+                                <strong style="color: #00C805;">Home Screen:</strong><br>
+                                <code>1</code> or <code>B</code> - Buy<br>
+                                <code>2</code> or <code>S</code> - Sell<br>
+                                <code>3</code> - Balance<br>
+                                <code>4</code> or <code>P</code> - Positions<br>
+                                <code>ESC</code> or <code>Q</code> - Exit<br>
+                            </div>
+
+                            <div>
+                                <strong style="color: #00C805;">Trade Screen:</strong><br>
+                                <code>B</code> - Buy tab<br>
+                                <code>S</code> - Sell tab<br>
+                                <code>ENTER</code> - Submit order<br>
+                                <code>ESC</code> - Back to home<br><br>
+
+                                <strong style="color: #00C805;">Any Screen:</strong><br>
+                                <code>ESC</code> - Go back<br>
+                                <code>H</code> - Show this help<br><br>
+
+                                <strong style="color: #00C805;">Navigation:</strong><br>
+                                <code>TAB</code> - Next field<br>
+                                <code>SHIFT+TAB</code> - Previous<br>
+                                <code>ENTER</code> - Activate button<br>
+                            </div>
+                        </div>
+
+                        <button onclick="document.getElementById('keyboard-help-overlay').remove()"
+                                style="margin-top: 30px; padding: 12px 30px; background: #00C805; color: #000;
+                                       border: none; border-radius: 24px; cursor: pointer; font-size: 1.1em; font-weight: 700; width: 100%;">
+                            Close (ESC or Click)
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', helpHTML);
+            
+            // Close with ESC
+            document.getElementById('keyboard-help-overlay').addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.getElementById('keyboard-help-overlay').remove();
+                }
+            });
+        }
+
+        // Add keyboard hint indicator
+        const keyboardHint = document.createElement('div');
+        keyboardHint.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 200, 5, 0.1);
+            border: 2px solid #00C805;
+            border-radius: 24px;
+            padding: 10px 20px;
+            font-size: 0.9em;
+            color: #00C805;
+            cursor: pointer;
+            z-index: 10000;
+            transition: all 0.2s;
+        `;
+        keyboardHint.textContent = '⌨️ Press H for shortcuts';
+        keyboardHint.onclick = showKeyboardHelp;
+        keyboardHint.onmouseenter = () => {
+            keyboardHint.style.background = 'rgba(0, 200, 5, 0.2)';
+            keyboardHint.style.transform = 'scale(1.05)';
+        };
+        keyboardHint.onmouseleave = () => {
+            keyboardHint.style.background = 'rgba(0, 200, 5, 0.1)';
+            keyboardHint.style.transform = 'scale(1)';
+        };
+        document.body.appendChild(keyboardHint);
+
+        console.log('⌨️ Keyboard navigation enabled!');
+        console.log('Press H for keyboard shortcuts');
+    </script>

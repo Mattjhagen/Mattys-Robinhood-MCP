@@ -11,10 +11,18 @@ import hashlib
 import hmac
 from datetime import datetime
 from pathlib import Path
+import sys
+
+# Add parent directory to path for robinhood_api import
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from robinhood_api import get_robinhood_api
 
 app = Flask(__name__,
            static_folder='atm_static',
            template_folder='atm_templates')
+
+# Initialize Robinhood API
+robinhood = get_robinhood_api()
 
 # Configuration
 CORRECT_PIN = "0213"
@@ -45,20 +53,22 @@ class ATMSession:
 session = ATMSession()
 
 def load_portfolio_data():
-    """Load portfolio data"""
+    """Load portfolio data from Robinhood API"""
     try:
-        with open(STATE_FILE, 'r') as f:
-            state = json.load(f)
-            return {
-                'total_value': 34.45,
-                'buying_power': 0.00,
-                'crypto_positions': [
-                    {'symbol': 'BTC', 'quantity': 0.00023893, 'value': 19.81, 'change': '+2.3%'},
-                    {'symbol': 'ETH', 'quantity': 0.005831, 'value': 14.61, 'change': '-0.8%'}
-                ],
-                'last_update': state.get('last_update', datetime.now().isoformat())
-            }
-    except:
+        # Get real data from Robinhood API
+        total_value = robinhood.get_portfolio_value()
+        buying_power = robinhood.get_buying_power()
+        positions = robinhood.get_positions()
+
+        return {
+            'total_value': total_value,
+            'buying_power': buying_power,
+            'crypto_positions': positions,
+            'last_update': datetime.now().isoformat()
+        }
+    except Exception as e:
+        print(f"Error loading portfolio: {e}")
+        # Fallback to mock data
         return {
             'total_value': 34.45,
             'buying_power': 0.00,
@@ -348,3 +358,98 @@ if __name__ == '__main__':
 
     # Run on all interfaces (accessible from Clover)
     app.run(host='0.0.0.0', port=5050, debug=False)
+
+# ============================================================================
+# TRADING ENDPOINTS (Robinhood API Integration)
+# ============================================================================
+
+@app.route('/api/trade/buy', methods=['POST'])
+def trade_buy():
+    """Buy cryptocurrency via Robinhood API"""
+    if not session.authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.json
+    symbol = data.get('symbol', '').upper().strip()
+    amount = float(data.get('amount', 0))
+
+    if not symbol or amount <= 0:
+        return jsonify({'success': False, 'error': 'Invalid symbol or amount'})
+
+    try:
+        # Execute buy order through Robinhood API
+        result = robinhood.buy_crypto(symbol, amount)
+
+        if 'error' in result:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            })
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully bought ${amount:.2f} of {symbol}',
+            'order_id': result.get('id'),
+            'status': result.get('status')
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/trade/sell', methods=['POST'])
+def trade_sell():
+    """Sell cryptocurrency via Robinhood API"""
+    if not session.authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.json
+    symbol = data.get('symbol', '').upper().strip()
+    quantity = float(data.get('quantity', 0))
+
+    if not symbol or quantity <= 0:
+        return jsonify({'success': False, 'error': 'Invalid symbol or quantity'})
+
+    try:
+        # Execute sell order through Robinhood API
+        result = robinhood.sell_crypto(symbol, quantity)
+
+        if 'error' in result:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            })
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully sold {quantity} {symbol}',
+            'order_id': result.get('id'),
+            'status': result.get('status')
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/quote/<symbol>', methods=['GET'])
+def get_quote(symbol):
+    """Get real-time quote for symbol"""
+    try:
+        quote = robinhood.get_quote(symbol)
+        return jsonify(quote)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/tickers', methods=['GET'])
+def get_tickers():
+    """Get ticker data for multiple symbols"""
+    try:
+        symbols = ['BTC', 'ETH', 'DOGE', 'SOL', 'ADA', 'MATIC']
+        quotes = robinhood.get_quotes(symbols)
+        return jsonify(quotes)
+    except Exception as e:
+        return jsonify({'error': str(e)})

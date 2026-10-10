@@ -1,104 +1,49 @@
 #!/bin/bash
-#
-# Quick test of Clover integration
-# Tests connectivity and API endpoints
-#
+# Test Clover C505 connection to r510
 
-ATM_URL="http://100.103.3.35:5050"
-
-echo "======================================================================"
-echo "  P3 ATM - Clover Integration Test"
-echo "======================================================================"
+echo "=================================="
+echo "  Clover C505 Connection Test"
+echo "=================================="
 echo ""
 
-# Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-test_endpoint() {
-    local name="$1"
-    local endpoint="$2"
-    local expected="$3"
-
-    echo -n "Testing $name... "
-
-    response=$(curl -s "$ATM_URL$endpoint" 2>/dev/null)
-
-    if echo "$response" | grep -q "$expected"; then
-        echo -e "${GREEN}✓ Pass${NC}"
-        return 0
-    else
-        echo -e "${RED}✗ Fail${NC}"
-        echo "  Response: $response"
-        return 1
-    fi
-}
-
-echo "1. Testing basic connectivity..."
-test_endpoint "Health check" "/health" "ok"
+echo "1. Checking USB devices..."
+lsusb | grep -i clover && echo "✓ Clover found via USB" || echo "✗ Clover not found"
 echo ""
 
-echo "2. Testing API status..."
-test_endpoint "Status endpoint" "/api/status" "online"
+echo "2. Checking for HID devices..."
+ls /dev/input/event* 2>/dev/null | while read device; do
+    echo "  Found: $device"
+done
 echo ""
 
-echo "3. Testing Clover configuration..."
-test_endpoint "Clover status" "/api/clover/status" "configured"
+echo "3. Checking ADB..."
+which adb > /dev/null && echo "✓ ADB installed" || echo "✗ ADB not installed (sudo apt-get install -y adb)"
 echo ""
 
-echo "4. Testing authentication endpoints..."
-echo -n "  PIN auth endpoint... "
-response=$(curl -s -X POST "$ATM_URL/api/authenticate" \
-    -H "Content-Type: application/json" \
-    -d '{"pin":"0000"}' 2>/dev/null)
-
-if echo "$response" | grep -q "success"; then
-    echo -e "${GREEN}✓ Accessible${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
+if which adb > /dev/null; then
+    echo "4. Checking ADB devices..."
+    adb devices | tail -n +2 | grep -v "^$" && echo "✓ Device connected via ADB" || echo "✗ No ADB devices"
+    echo ""
 fi
 
-echo -n "  Card auth endpoint... "
-response=$(curl -s -X POST "$ATM_URL/api/authenticate/card" \
-    -H "Content-Type: application/json" \
-    -d '{"encrypted_pin":"test"}' 2>/dev/null)
-
-if echo "$response" | grep -q "success\|message"; then
-    echo -e "${GREEN}✓ Accessible${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-fi
+echo "5. Checking P3 ATM server..."
+curl -s http://localhost:5050/health > /dev/null && echo "✓ P3 ATM running on port 5050" || echo "✗ P3 ATM not running"
 echo ""
 
-echo "5. Testing from Clover perspective..."
-echo "   On your Clover device, try:"
+echo "=================================="
+echo "Next steps:"
+echo "=================================="
 echo ""
-echo "   ${YELLOW}Browser Test:${NC}"
-echo "   http://100.103.3.35:5050"
+echo "If Clover found via USB:"
+echo "  - Try typing on PIN pad while browser is focused"
+echo "  - Keys should register as keyboard input"
 echo ""
-echo "   ${YELLOW}Bridge Test:${NC}"
-echo "   http://100.103.3.35:5050/clover"
+echo "If ADB device found:"
+echo "  - Run: adb shell am start -a android.intent.action.VIEW -d http://100.103.3.35:5050"
+echo "  - This opens P3 ATM on Clover screen"
 echo ""
-
-echo "======================================================================"
-echo "Test complete!"
+echo "If nothing works:"
+echo "  - Try factory reset on C505 (hold power 10 sec)"
+echo "  - Enable developer mode (tap Clover logo 7 times)"
+echo "  - Or use a cheap Android tablet instead!"
 echo ""
-echo "If all tests passed:"
-echo "  ✓ Server is accessible from network"
-echo "  ✓ Clover integration endpoints are live"
-echo "  ✓ Ready to test with Clover device"
-echo ""
-echo "If tests failed:"
-echo "  • Check if p3-atm-web service is running:"
-echo "    sudo systemctl status p3-atm-web"
-echo ""
-echo "  • Check firewall:"
-echo "    sudo ufw status"
-echo "    sudo ufw allow 5050/tcp"
-echo ""
-echo "  • Test from r510 first:"
-echo "    curl http://localhost:5050/health"
-echo ""
-echo "======================================================================"

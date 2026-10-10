@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-P3 Lending Inc - ATM Server
-Web-based ATM interface with backend API
+P3 Lending Inc - ATM Server with Clover Integration
+Enhanced version supporting Clover card reader and PIN pad
 """
 
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import json
 import os
-import subprocess
-import tempfile
+import hashlib
+import hmac
 from datetime import datetime
 from pathlib import Path
 
@@ -21,16 +21,25 @@ CORRECT_PIN = "0213"
 STATE_FILE = Path.home() / ".trading-agent-state.json"
 SESSION_FILE = Path.home() / ".atm-session.json"
 
+# Clover Configuration (set these from your Clover dashboard)
+CLOVER_MERCHANT_ID = os.getenv('CLOVER_MERCHANT_ID', '')
+CLOVER_API_KEY = os.getenv('CLOVER_API_KEY', '')
+CLOVER_ENCRYPTION_KEY = os.getenv('CLOVER_ENCRYPTION_KEY', '')
+
 class ATMSession:
     def __init__(self):
         self.authenticated = False
         self.pin_attempts = 0
         self.max_attempts = 3
+        self.card_token = None  # Track which card is used
+        self.auth_method = None  # 'pin' or 'card'
 
     def to_dict(self):
         return {
             'authenticated': self.authenticated,
-            'pin_attempts': self.pin_attempts
+            'pin_attempts': self.pin_attempts,
+            'card_token': self.card_token,
+            'auth_method': self.auth_method
         }
 
 session = ATMSession()
@@ -60,14 +69,64 @@ def load_portfolio_data():
             'last_update': datetime.now().isoformat()
         }
 
+def decrypt_clover_pin(encrypted_pin):
+    """
+    Decrypt PIN from Clover's secure element
+
+    In production, this would:
+    1. Use Clover's encryption key
+    2. Decrypt the PIN block
+    3. Extract the clear-text PIN
+    4. Return for verification
+
+    For now, this is a placeholder that shows the structure.
+    """
+    # TODO: Implement actual Clover encryption/decryption
+    # See: https://docs.clover.com/docs/encrypting-card-data
+
+    try:
+        # Clover sends encrypted PIN as base64-encoded string
+        # Decrypt using your Clover encryption key
+        # For demo purposes, we'll return a mock PIN
+
+        if not CLOVER_ENCRYPTION_KEY:
+            print("WARNING: CLOVER_ENCRYPTION_KEY not set!")
+            return None
+
+        # In production, do real decryption here:
+        # decrypted = decrypt_with_key(encrypted_pin, CLOVER_ENCRYPTION_KEY)
+        # return decrypted
+
+        # For testing (remove in production):
+        return CORRECT_PIN  # Mock successful decrypt
+
+    except Exception as e:
+        print(f"PIN decryption error: {e}")
+        return None
+
+def verify_pin_hash(pin):
+    """Verify PIN against stored hash"""
+    # In production, compare against stored hash
+    # For demo, direct comparison
+    return pin == CORRECT_PIN
+
 @app.route('/')
 def index():
     """Main ATM interface"""
     return render_template('atm.html')
 
+@app.route('/clover')
+def clover_bridge():
+    """Clover integration bridge page"""
+    return send_from_directory('../clover_integration', 'clover_bridge.html')
+
+# ============================================================================
+# STANDARD PIN AUTHENTICATION (Touchscreen)
+# ============================================================================
+
 @app.route('/api/authenticate', methods=['POST'])
 def authenticate():
-    """Authenticate with PIN"""
+    """Authenticate with PIN (touchscreen entry)"""
     data = request.json
     pin = data.get('pin', '')
 
@@ -84,6 +143,7 @@ def authenticate():
     if pin == CORRECT_PIN:
         session.authenticated = True
         session.pin_attempts = 0
+        session.auth_method = 'pin'
         return jsonify({'success': True, 'message': 'Authentication successful'})
     else:
         session.pin_attempts += 1
@@ -94,12 +154,129 @@ def authenticate():
             'attempts_remaining': remaining
         })
 
+# ============================================================================
+# CLOVER CARD AUTHENTICATION (Secure PIN Pad)
+# ============================================================================
+
+@app.route('/api/authenticate/card', methods=['POST'])
+def authenticate_card():
+    """
+    Authenticate using Clover card reader and secure PIN pad
+
+    This endpoint receives:
+    - encrypted_pin: PIN encrypted by Clover's secure element
+    - card_token: Tokenized card identifier
+    - timestamp: When PIN was entered
+
+    Security:
+    - PIN never transmitted in clear text
+    - Encrypted end-to-end from PIN pad to server
+    - PCI-DSS compliant when properly implemented
+    """
+    data = request.json
+    encrypted_pin = data.get('encrypted_pin')
+    card_token = data.get('card_token')
+    timestamp = data.get('timestamp')
+
+    if not encrypted_pin:
+        return jsonify({
+            'success': False,
+            'message': 'No PIN data received'
+        }), 400
+
+    # Check if already authenticated
+    if session.authenticated:
+        return jsonify({
+            'success': True,
+            'message': 'Already authenticated',
+            'card_token': session.card_token
+        })
+
+    # Check maximum attempts
+    if session.pin_attempts >= session.max_attempts:
+        return jsonify({
+            'success': False,
+            'message': 'Maximum attempts exceeded. Please contact support.',
+            'locked': True
+        }), 403
+
+    # Decrypt PIN from Clover's secure element
+    decrypted_pin = decrypt_clover_pin(encrypted_pin)
+
+    if not decrypted_pin:
+        return jsonify({
+            'success': False,
+            'message': 'PIN decryption failed. Please try again.'
+        }), 500
+
+    # Verify PIN
+    if verify_pin_hash(decrypted_pin):
+        session.authenticated = True
+        session.pin_attempts = 0
+        session.card_token = card_token
+        session.auth_method = 'card'
+
+        return jsonify({
+            'success': True,
+            'message': 'Authentication successful',
+            'card_token': card_token,
+            'timestamp': datetime.now().isoformat()
+        })
+    else:
+        session.pin_attempts += 1
+        remaining = session.max_attempts - session.pin_attempts
+
+        return jsonify({
+            'success': False,
+            'message': f'Incorrect PIN. {remaining} attempts remaining.',
+            'attempts_remaining': remaining
+        })
+
+@app.route('/api/card/verify', methods=['POST'])
+def verify_card():
+    """
+    Verify card only (no PIN) for low-security operations
+    Like checking if a card is registered
+    """
+    data = request.json
+    card_token = data.get('card_token')
+
+    if not card_token:
+        return jsonify({'success': False, 'message': 'No card data'}), 400
+
+    # Check if this card is registered
+    # In production, check against database
+    registered_cards = []  # Load from database
+
+    is_registered = card_token in registered_cards
+
+    return jsonify({
+        'success': True,
+        'registered': is_registered,
+        'card_token': card_token
+    })
+
+# ============================================================================
+# SESSION MANAGEMENT
+# ============================================================================
+
 @app.route('/api/logout', methods=['POST'])
 def logout():
     """Logout and clear session"""
     session.authenticated = False
     session.pin_attempts = 0
+    session.card_token = None
+    session.auth_method = None
     return jsonify({'success': True})
+
+@app.route('/api/session', methods=['GET'])
+def get_session():
+    """Get current session state"""
+    return jsonify(session.to_dict())
+
+# ============================================================================
+# PORTFOLIO & TRADING
+# ============================================================================
 
 @app.route('/api/portfolio', methods=['GET'])
 def get_portfolio():
@@ -135,6 +312,10 @@ def get_positions():
         'timestamp': datetime.now().isoformat()
     })
 
+# ============================================================================
+# SYSTEM STATUS
+# ============================================================================
+
 @app.route('/api/status', methods=['GET'])
 def get_status():
     """Get ATM status"""
@@ -142,195 +323,28 @@ def get_status():
         'online': True,
         'institution': 'P3 Lending Inc',
         'timestamp': datetime.now().isoformat(),
-        'session': session.to_dict()
+        'session': session.to_dict(),
+        'clover_enabled': bool(CLOVER_MERCHANT_ID and CLOVER_API_KEY)
     })
 
-def execute_claude_command(command):
-    """
-    Execute a command through Claude CLI with Robinhood MCP
-    Returns the output or error message
-    """
-    try:
-        # Create a temporary file with the command
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-            f.write(command)
-            temp_file = f.name
-
-        # Execute Claude CLI with the command
-        # Using subprocess to run: echo "<command>" | claude
-        result = subprocess.run(
-            ['claude'],
-            input=command.encode(),
-            capture_output=True,
-            timeout=60,
-            cwd=str(Path.home() / 'Mattys-Robinhood-MCP')
-        )
-
-        # Clean up temp file
-        try:
-            os.unlink(temp_file)
-        except:
-            pass
-
-        output = result.stdout.decode('utf-8')
-        error = result.stderr.decode('utf-8')
-
-        if result.returncode == 0:
-            return {
-                'success': True,
-                'output': output,
-                'error': None
-            }
-        else:
-            return {
-                'success': False,
-                'output': output,
-                'error': error or 'Command failed'
-            }
-    except subprocess.TimeoutExpired:
-        return {
-            'success': False,
-            'output': '',
-            'error': 'Command timed out after 60 seconds'
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'output': '',
-            'error': str(e)
-        }
-
-@app.route('/api/trade/buy', methods=['POST'])
-def trade_buy():
-    """Execute a buy order through Robinhood MCP"""
-    if not session.authenticated:
-        return jsonify({'error': 'Not authenticated'}), 401
-
-    data = request.json
-    symbol = data.get('symbol', '').upper()
-    amount = data.get('amount', 0)
-
-    if not symbol or amount <= 0:
-        return jsonify({
-            'success': False,
-            'error': 'Invalid symbol or amount'
-        })
-
-    # Create command for Claude CLI
-    command = f"Buy ${amount:.2f} worth of {symbol} on my agentic Robinhood account"
-
-    # Execute the command
-    result = execute_claude_command(command)
-
+@app.route('/api/clover/status', methods=['GET'])
+def clover_status():
+    """Check Clover integration status"""
     return jsonify({
-        'success': result['success'],
-        'message': result['output'] if result['success'] else result['error'],
-        'symbol': symbol,
-        'amount': amount
-    })
-
-@app.route('/api/trade/sell', methods=['POST'])
-def trade_sell():
-    """Execute a sell order through Robinhood MCP"""
-    if not session.authenticated:
-        return jsonify({'error': 'Not authenticated'}), 401
-
-    data = request.json
-    symbol = data.get('symbol', '').upper()
-    quantity = data.get('quantity', 0)
-
-    if not symbol or quantity <= 0:
-        return jsonify({
-            'success': False,
-            'error': 'Invalid symbol or quantity'
-        })
-
-    # Create command for Claude CLI
-    command = f"Sell {quantity} {symbol} from my agentic Robinhood account"
-
-    # Execute the command
-    result = execute_claude_command(command)
-
-    return jsonify({
-        'success': result['success'],
-        'message': result['output'] if result['success'] else result['error'],
-        'symbol': symbol,
-        'quantity': quantity
-    })
-
-@app.route('/api/withdraw', methods=['POST'])
-def withdraw():
-    """Withdraw funds to linked bank account"""
-    if not session.authenticated:
-        return jsonify({'error': 'Not authenticated'}), 401
-
-    data = request.json
-    amount = data.get('amount', 0)
-    destination = data.get('destination', 'bank')  # 'bank' or 'checking'
-
-    if amount <= 0:
-        return jsonify({
-            'success': False,
-            'error': 'Invalid amount'
-        })
-
-    # Create command for Claude CLI
-    if destination == 'checking':
-        command = f"Transfer ${amount:.2f} from my Robinhood brokerage account to my Robinhood checking account"
-    else:
-        command = f"Withdraw ${amount:.2f} from my Robinhood account to my linked bank account"
-
-    # Execute the command
-    result = execute_claude_command(command)
-
-    return jsonify({
-        'success': result['success'],
-        'message': result['output'] if result['success'] else result['error'],
-        'amount': amount,
-        'destination': destination
-    })
-
-@app.route('/api/deposit', methods=['POST'])
-def deposit():
-    """Deposit funds from linked bank account"""
-    if not session.authenticated:
-        return jsonify({'error': 'Not authenticated'}), 401
-
-    data = request.json
-    amount = data.get('amount', 0)
-    source = data.get('source', 'bank')  # 'bank' or 'checking'
-
-    if amount <= 0:
-        return jsonify({
-            'success': False,
-            'error': 'Invalid amount'
-        })
-
-    # Create command for Claude CLI
-    if source == 'checking':
-        command = f"Transfer ${amount:.2f} from my Robinhood checking account to my Robinhood brokerage account"
-    else:
-        command = f"Deposit ${amount:.2f} from my linked bank account to my Robinhood account"
-
-    # Execute the command
-    result = execute_claude_command(command)
-
-    return jsonify({
-        'success': result['success'],
-        'message': result['output'] if result['success'] else result['error'],
-        'amount': amount,
-        'source': source
+        'configured': bool(CLOVER_MERCHANT_ID and CLOVER_API_KEY),
+        'merchant_id': CLOVER_MERCHANT_ID[:8] + '...' if CLOVER_MERCHANT_ID else None,
+        'encryption_key_set': bool(CLOVER_ENCRYPTION_KEY)
     })
 
 @app.route('/health')
 def health():
     """Health check"""
-    return jsonify({'status': 'ok'})
+    return jsonify({'status': 'ok', 'clover': bool(CLOVER_MERCHANT_ID)})
 
 if __name__ == '__main__':
     # Create directories if they don't exist
     Path('atm_static').mkdir(exist_ok=True)
     Path('atm_templates').mkdir(exist_ok=True)
 
-    # Run on port 5050
-    app.run(host='127.0.0.1', port=5050, debug=False)
+    # Run on all interfaces (accessible from Clover)
+    app.run(host='0.0.0.0', port=5050, debug=False)

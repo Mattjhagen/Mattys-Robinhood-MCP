@@ -276,3 +276,67 @@ systemctl --user restart robinhood-atm-server
 
 ---
 **Ready to go live once DNS is updated!** 🚀
+
+## 🧾 QUICK BALANCE SCREEN (ATM Receipt)
+
+### What It Shows
+After entering your PIN, you'll see an ATM-style receipt with:
+
+**Header:**
+- Current date and time
+- "ROBINHOOD ATM" title
+- Transaction ID
+
+**Balance Information:**
+- TOTAL BALANCE INQUIRY - Your complete portfolio value
+- AVAILABLE TO TRADE - Current buying power
+- TODAY'S PERFORMANCE - P&L with percentage (📈 green for profit, 📉 red for loss)
+
+**Detailed Breakdown:**
+- ACCOUNT BREAKDOWN - List of all accounts with balances
+- YOUR POSITIONS - All holdings with:
+  - Symbol
+  - Quantity
+  - Current value
+  - Individual P&L per position
+
+**Action:**
+- "Continue to Trading" button to proceed to main interface
+
+### User Flow
+```
+Welcome Screen
+     ↓ (Press Enter)
+PIN Entry (0213)
+     ↓ (Press NumpadEnter)
+✨ QUICK BALANCE SCREEN ✨ ← You see P&L here!
+     ↓ (Click Continue or Press Enter)
+Main Trading Interface
+```
+
+### Features
+- ✅ Shows profit/loss with color coding
+- ✅ Percentage changes for each position
+- ✅ Account-by-account breakdown
+- ✅ Real-time data from Robinhood API
+- ✅ Professional ATM receipt styling
+- ✅ Keyboard accessible (Enter to continue)
+
+### API Endpoint
+`GET /api/quick-balance` returns:
+```json
+{
+  "success": true,
+  "total_value": 34.45,
+  "accounts": [...],
+  "positions": [...],
+  "profit_loss": {
+    "amount": -5.74,
+    "percentage": -14.26,
+    "cost_basis": 40.19,
+    "current_value": 34.45
+  }
+}
+```
+
+This screen was implemented earlier and is working perfectly! ✓

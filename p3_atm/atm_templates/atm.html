@@ -1801,6 +1801,8 @@
 
             // Combine nav items and screen elements
             focusableElements = [...navItems, ...screenElements].filter(el => {
+                // Check if element is actually visible (offsetParent is null for hidden elements)
+                if (el.offsetParent === null) return false;
                 const style = window.getComputedStyle(el);
                 return style.display !== "none" && style.visibility !== "hidden";
             });

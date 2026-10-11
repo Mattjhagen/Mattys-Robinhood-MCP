@@ -1262,6 +1262,7 @@
 
         // Screen management
         function showScreen(screenId) {
+            console.log('🖥️ Showing screen:', screenId);
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
 
@@ -1326,6 +1327,7 @@
                 if (data.success) {
                     authenticated = true;
                     clearPin();
+                    console.log('✅ Authentication successful - showing quick balance');
                     showScreen('quick-balance-screen');
                     loadQuickBalance(); // Load ATM-style balance
                 } else {
@@ -1339,9 +1341,11 @@
 
         // Load ATM-style quick balance (after PIN)
         async function loadQuickBalance() {
+            console.log('🔄 Loading quick balance data...');
             try {
                 const response = await fetch('/api/quick-balance');
                 const data = await response.json();
+                console.log('📊 Quick balance data received:', data);
 
                 if (data.success && data.accounts) {
                     // Set date and time
@@ -1443,9 +1447,11 @@
                             </div>
                         `;
                     }
+
+                    console.log('✅ Quick balance screen populated successfully');
                 }
             } catch (error) {
-                console.error('Error loading quick balance:', error);
+                console.error('❌ Error loading quick balance:', error);
                 document.getElementById('quick-total-balance').textContent = 'Error loading balance';
             }
         }

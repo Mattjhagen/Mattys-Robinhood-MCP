@@ -1662,9 +1662,19 @@
             } catch (error) {
                 console.error('Logout error:', error);
             }
+            // Clear all session state
             authenticated = false;
             pinEntry = '';
+            currentAccountId = null;
+            allAccounts = [];
+            clearAllTimers();
+
+            // Return to welcome screen
             showScreen('welcome-screen');
+
+            // Clear any cached data
+            document.getElementById('holdings-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading your portfolio...</div>';
+            document.getElementById('portfolio-value').textContent = '$0.00';
         }
 
         // Account management
@@ -1746,6 +1756,17 @@
 
         // Initialize
         initTicker();
+
+        // Always start at welcome screen (force logout on page load)
+        window.addEventListener('load', () => {
+            authenticated = false;
+            pinEntry = '';
+            currentAccountId = null;
+            allAccounts = [];
+            clearAllTimers();
+            showScreen('welcome-screen');
+            console.log('ATM initialized - authentication required');
+        });
     </script>
     <!-- Arrow key navigation is inline below -->
     <script>
@@ -1808,6 +1829,7 @@
             <div class="timeout-title">Are you still there?</div>
             <div class="timeout-message">Your session will end in:</div>
             <div class="timeout-countdown" id="timeout-countdown">30</div>
+            <div style="color: #888; margin-bottom: 20px; font-size: 0.9em;">Press Enter or click below to continue</div>
             <button class="timeout-btn" onclick="resetInactivityTimer()">
                 Yes, I'm Still Here
             </button>
@@ -1815,12 +1837,12 @@
     </div>
 
     <script>
-        // Inactivity timeout (2 minutes = 120 seconds)
+        // Inactivity timeout (30 seconds)
         let inactivityTimer = null;
         let warningTimer = null;
         let countdownTimer = null;
         let countdownSeconds = 30;
-        const INACTIVITY_TIMEOUT = 120000; // 2 minutes in milliseconds
+        const INACTIVITY_TIMEOUT = 30000; // 30 seconds in milliseconds
         const WARNING_COUNTDOWN = 30; // 30 seconds countdown
 
         function startInactivityTimer() {
@@ -1835,7 +1857,7 @@
 
             clearAllTimers();
 
-            // Start 2-minute inactivity timer
+            // Start 30-second inactivity timer
             inactivityTimer = setTimeout(() => {
                 showTimeoutWarning();
             }, INACTIVITY_TIMEOUT);
@@ -1896,6 +1918,17 @@
                 }
             });
         });
+
+        // Global Enter key handler for timeout modal (highest priority)
+        document.addEventListener('keydown', (e) => {
+            const overlay = document.getElementById('timeout-overlay');
+            if (e.key === 'Enter' && overlay && overlay.classList.contains('active')) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetInactivityTimer();
+                return false;
+            }
+        }, true); // Use capture phase for highest priority
 
         // Start timer when user authenticates (called from submitPin)
         const originalShowScreen = showScreen;

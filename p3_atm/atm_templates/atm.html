@@ -1305,7 +1305,7 @@
 
         function updatePinDisplay() {
             const display = document.getElementById('pin-display');
-            display.textContent = '●'.repeat(pinEntry.length) + '○'.repeat(4 - pinEntry.length);
+            display.textContent = '✻'.repeat(pinEntry.length) + '－'.repeat(4 - pinEntry.length);
         }
 
         async function submitPin() {
@@ -1918,21 +1918,25 @@
             const activeScreen = document.querySelector('.screen.active');
             if (!activeScreen) return;
 
-            // PIN screen - number keys
+            // PIN screen - number keys (including numpad)
             if (activeScreen.id === 'pin-screen') {
-                if (e.key >= '0' && e.key <= '9') {
+                const numMatch = e.key.match(/^(Numpad)?([0-9])$/);
+                if (numMatch) {
+                    e.preventDefault();
+                    addPinDigit(numMatch[2]);
+                } else if (e.key === '0' || (e.key >= '0' && e.key <= '9')) {
                     e.preventDefault();
                     addPinDigit(e.key);
-                } else if (e.key === 'Enter') {
+                } else if (e.key === 'Enter' || e.key === 'NumpadEnter') {
                     e.preventDefault();
                     submitPin();
-                } else if (e.key === 'Backspace') {
+                } else if (e.key === 'Backspace' || e.key === 'NumpadSubtract' || e.key === 'Delete') {
                     e.preventDefault();
                     if (pinEntry.length > 0) {
                         pinEntry = pinEntry.slice(0, -1);
                         updatePinDisplay();
                     }
-                } else if (e.key === 'Escape') {
+                } else if (e.key === 'Escape' || e.key === 'NumpadDecimal') {
                     e.preventDefault();
                     clearPin();
                     showScreen('welcome-screen');
@@ -1947,23 +1951,23 @@
                 }
             }
 
-            // Home screen - number shortcuts
+            // Home screen - number shortcuts (including numpad)
             else if (activeScreen.id === 'home-screen') {
-                if (e.key === '1' || e.key === 'b' || e.key === 'B') {
+                if (e.key === '1' || e.key === 'Numpad1' || e.key === 'b' || e.key === 'B') {
                     e.preventDefault();
                     showScreen('trade-screen');
                     selectTradeType('buy');
-                } else if (e.key === '2' || e.key === 's' || e.key === 'S') {
+                } else if (e.key === '2' || e.key === 'Numpad2' || e.key === 's' || e.key === 'S') {
                     e.preventDefault();
                     showScreen('trade-screen');
                     selectTradeType('sell');
-                } else if (e.key === '3') {
+                } else if (e.key === '3' || e.key === 'Numpad3') {
                     e.preventDefault();
                     showScreen('balance-screen');
-                } else if (e.key === '4' || e.key === 'p' || e.key === 'P') {
+                } else if (e.key === '4' || e.key === 'Numpad4' || e.key === 'p' || e.key === 'P') {
                     e.preventDefault();
                     showScreen('positions-screen');
-                } else if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q') {
+                } else if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q' || e.key === 'NumpadDecimal') {
                     e.preventDefault();
                     logout();
                 }

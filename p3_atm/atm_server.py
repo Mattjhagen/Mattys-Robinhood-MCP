@@ -17,16 +17,17 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from robinhood_api import get_robinhood_api
 from totp_2fa import get_totp_2fa
+from pin_auth import PINAuthenticator
 
 app = Flask(__name__,
            static_folder='atm_static',
            template_folder='atm_templates')
 
-# Initialize Robinhood API
+# Initialize Robinhood API and secure PIN authentication
 robinhood = get_robinhood_api()
+pin_authenticator = PINAuthenticator()
 
 # Configuration
-CORRECT_PIN = "0213"
 STATE_FILE = Path.home() / ".trading-agent-state.json"
 SESSION_FILE = Path.home() / ".atm-session.json"
 
@@ -67,59 +68,36 @@ def load_portfolio_data():
             'crypto_positions': positions,
             'last_update': datetime.now().isoformat()
         }
+    except ConnectionError as e:
+        print(f"Connection error loading portfolio: {e}")
+        raise
+    except ValueError as e:
+        print(f"Data validation error: {e}")
+        raise
     except Exception as e:
-        print(f"Error loading portfolio: {e}")
-        # Fallback to mock data
-        return {
-            'total_value': 34.45,
-            'buying_power': 0.00,
-            'crypto_positions': [
-                {'symbol': 'BTC', 'quantity': 0.00023893, 'value': 19.81, 'change': '+2.3%'},
-                {'symbol': 'ETH', 'quantity': 0.005831, 'value': 14.61, 'change': '-0.8%'}
-            ],
-            'last_update': datetime.now().isoformat()
-        }
+        print(f"Unexpected error loading portfolio: {e}")
+        # Log the full traceback for debugging
+        import traceback
+        traceback.print_exc()
+        raise
 
 def decrypt_clover_pin(encrypted_pin):
     """
     Decrypt PIN from Clover's secure element
 
-    In production, this would:
-    1. Use Clover's encryption key
-    2. Decrypt the PIN block
-    3. Extract the clear-text PIN
-    4. Return for verification
-
-    For now, this is a placeholder that shows the structure.
+    Note: Clover integration is not fully implemented.
+    For production use, implement proper decryption following
+    Clover's security guidelines.
     """
-    # TODO: Implement actual Clover encryption/decryption
-    # See: https://docs.clover.com/docs/encrypting-card-data
+    if not CLOVER_ENCRYPTION_KEY:
+        raise ValueError("Clover encryption not configured. Use touchscreen PIN entry.")
 
-    try:
-        # Clover sends encrypted PIN as base64-encoded string
-        # Decrypt using your Clover encryption key
-        # For demo purposes, we'll return a mock PIN
-
-        if not CLOVER_ENCRYPTION_KEY:
-            print("WARNING: CLOVER_ENCRYPTION_KEY not set!")
-            return None
-
-        # In production, do real decryption here:
-        # decrypted = decrypt_with_key(encrypted_pin, CLOVER_ENCRYPTION_KEY)
-        # return decrypted
-
-        # For testing (remove in production):
-        return CORRECT_PIN  # Mock successful decrypt
-
-    except Exception as e:
-        print(f"PIN decryption error: {e}")
-        return None
-
-def verify_pin_hash(pin):
-    """Verify PIN against stored hash"""
-    # In production, compare against stored hash
-    # For demo, direct comparison
-    return pin == CORRECT_PIN
+    # TODO: Implement actual Clover decryption when needed
+    # For now, fail closed rather than returning fake data
+    raise NotImplementedError(
+        "Clover PIN decryption not yet implemented. "
+        "Please use touchscreen PIN entry."
+    )
 
 @app.route('/')
 def index():
@@ -224,21 +202,36 @@ def get_2fa_status():
 
 @app.route('/api/authenticate', methods=['POST'])
 def authenticate():
-    """Authenticate with PIN (touchscreen entry)"""
+    """Authenticate with PIN (touchscreen entry) - Secure with lockout"""
     data = request.json
     pin = data.get('pin', '')
 
     if session.authenticated:
         return jsonify({'success': True, 'message': 'Already authenticated'})
 
-    if session.pin_attempts >= session.max_attempts:
+    # Check for persistent lockout
+    lockout_status = pin_authenticator.check_lockout()
+    if lockout_status['locked']:
         return jsonify({
             'success': False,
-            'message': 'Maximum attempts exceeded. Card retained.',
-            'locked': True
-        })
+            'message': f"Account locked for {lockout_status['minutes_remaining']} more minutes.",
+            'locked': True,
+            'lockout_until': lockout_status['lockout_until']
+        }), 403
 
-    if pin == CORRECT_PIN:
+    # Check session attempts (before lockout was applied)
+    if session.pin_attempts >= session.max_attempts:
+        # Apply persistent lockout
+        lockout_info = pin_authenticator.apply_lockout(session.pin_attempts)
+        return jsonify({
+            'success': False,
+            'message': f"Maximum attempts exceeded. Locked out for {lockout_info['minutes']} minutes.",
+            'locked': True,
+            'lockout_until': lockout_info['lockout_until']
+        }), 403
+
+    # Verify PIN using secure hashed comparison
+    if pin_authenticator.verify_pin(pin):
         session.authenticated = True
         session.pin_attempts = 0
         session.auth_method = 'pin'
@@ -246,6 +239,17 @@ def authenticate():
     else:
         session.pin_attempts += 1
         remaining = session.max_attempts - session.pin_attempts
+
+        if remaining == 0:
+            # Apply lockout immediately
+            lockout_info = pin_authenticator.apply_lockout(session.pin_attempts)
+            return jsonify({
+                'success': False,
+                'message': f"Maximum attempts exceeded. Locked out for {lockout_info['minutes']} minutes.",
+                'locked': True,
+                'lockout_until': lockout_info['lockout_until']
+            }), 403
+
         return jsonify({
             'success': False,
             'message': f'Incorrect PIN. {remaining} attempts remaining.',
@@ -298,37 +302,40 @@ def authenticate_card():
             'locked': True
         }), 403
 
-    # Decrypt PIN from Clover's secure element
-    decrypted_pin = decrypt_clover_pin(encrypted_pin)
+    # Attempt to decrypt PIN from Clover's secure element
+    try:
+        decrypted_pin = decrypt_clover_pin(encrypted_pin)
 
-    if not decrypted_pin:
+        # Verify PIN using secure authenticator
+        if pin_authenticator.verify_pin(decrypted_pin):
+            session.authenticated = True
+            session.pin_attempts = 0
+            session.card_token = card_token
+            session.auth_method = 'card'
+
+            return jsonify({
+                'success': True,
+                'message': 'Authentication successful',
+                'card_token': card_token,
+                'timestamp': datetime.now().isoformat()
+            })
+        else:
+            session.pin_attempts += 1
+            remaining = session.max_attempts - session.pin_attempts
+
+            return jsonify({
+                'success': False,
+                'message': f'Incorrect PIN. {remaining} attempts remaining.',
+                'attempts_remaining': remaining
+            })
+
+    except (ValueError, NotImplementedError) as e:
         return jsonify({
             'success': False,
-            'message': 'PIN decryption failed. Please try again.'
-        }), 500
-
-    # Verify PIN
-    if verify_pin_hash(decrypted_pin):
-        session.authenticated = True
-        session.pin_attempts = 0
-        session.card_token = card_token
-        session.auth_method = 'card'
-
-        return jsonify({
-            'success': True,
-            'message': 'Authentication successful',
-            'card_token': card_token,
-            'timestamp': datetime.now().isoformat()
-        })
-    else:
-        session.pin_attempts += 1
-        remaining = session.max_attempts - session.pin_attempts
-
-        return jsonify({
-            'success': False,
-            'message': f'Incorrect PIN. {remaining} attempts remaining.',
-            'attempts_remaining': remaining
-        })
+            'error': 'Clover authentication not available',
+            'message': str(e),
+            'suggestion': 'Please use touchscreen PIN entry'
+        }), 501  # Not Implemented
 
 @app.route('/api/card/verify', methods=['POST'])
 def verify_card():
@@ -442,12 +449,19 @@ def health():
 @app.route('/api/quick-balance', methods=['GET'])
 def quick_balance():
     """
-    Get quick balance preview for welcome screen
-    Returns cached/last-known balances - no authentication required
-    This is safe because it only shows high-level totals from last session
+    Get quick balance preview - REQUIRES AUTHENTICATION
+    Returns account balances and positions with profit/loss data
     """
+    # Authentication is now required for all balance data
+    if not session.authenticated:
+        return jsonify({
+            'success': False,
+            'error': 'Authentication required',
+            'message': 'Please authenticate to view balance'
+        }), 401
+
     try:
-        # Try to get accounts from API (will return mock data if not authenticated)
+        # Get accounts from API
         accounts = robinhood.get_all_accounts()
         positions = robinhood.get_positions()
 
@@ -474,20 +488,11 @@ def quick_balance():
         })
     except Exception as e:
         print(f"Error getting quick balance: {e}")
-        # Fallback to safe default
         return jsonify({
-            'success': True,
-            'total_value': 0.00,
-            'accounts': [],
-            'positions': [],
-            'profit_loss': {
-                'amount': 0,
-                'percentage': 0,
-                'cost_basis': 0,
-                'current_value': 0
-            },
-            'timestamp': datetime.now().isoformat()
-        })
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to retrieve balance'
+        }), 500
 
 # ============================================================================
 # TRADING ENDPOINTS (Robinhood API Integration)

@@ -1764,7 +1764,16 @@
         initTicker();
 
         // Always start at welcome screen (force logout on page load)
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
+            // Clear server-side session first
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                console.log('Server session cleared');
+            } catch (error) {
+                console.error('Failed to clear server session:', error);
+            }
+
+            // Clear client-side state
             authenticated = false;
             pinEntry = '';
             currentAccountId = null;

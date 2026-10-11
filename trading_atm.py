@@ -124,6 +124,97 @@ def format_currency(value):
     """Format value as currency"""
     return f"${float(value):.2f}"
 
+def calculate_pnl(data):
+    """Calculate today's P&L if available in state data"""
+    try:
+        if 'previous_value' in data and 'total_value' in data:
+            prev = float(data['previous_value'])
+            current = float(data['total_value'])
+            pnl_amount = current - prev
+            pnl_pct = (pnl_amount / prev * 100) if prev > 0 else 0
+            return pnl_amount, pnl_pct
+    except:
+        pass
+    return None, None
+
+def display_quick_balance_receipt():
+    """Display quick balance receipt after successful PIN entry"""
+    print_atm_header()
+    data = load_portfolio_data()
+
+    # Print receipt header
+    print(f"{WHITE}{BOLD}")
+    print("╔════════════════════════════════════════════════════════════════════════════╗")
+    print("║                              ROBINHOOD ATM                                 ║")
+    print("║                         BALANCE INQUIRY RECEIPT                            ║")
+    print("╚════════════════════════════════════════════════════════════════════════════╝")
+    print(f"{RESET}\n")
+
+    # Date and time
+    now = datetime.now()
+    print(f"  {CYAN}Date:{RESET} {now.strftime('%Y-%m-%d')}    {CYAN}Time:{RESET} {now.strftime('%H:%M:%S')}")
+    print(f"  {CYAN}Transaction ID:{RESET} {now.strftime('%Y%m%d%H%M%S')}")
+    print()
+    print(f"{YELLOW}{'─' * 80}{RESET}")
+    print()
+
+    # Total balance
+    total = data['total_value']
+    buying_power = data['buying_power']
+
+    print(f"  {BOLD}{WHITE}TOTAL BALANCE INQUIRY{RESET}")
+    print(f"  {BOLD}{GREEN}{format_currency(total)}{RESET}")
+    print()
+
+    # Available to trade
+    print(f"  {CYAN}AVAILABLE TO TRADE{RESET}")
+    print(f"  {WHITE}{format_currency(buying_power)}{RESET}")
+    print()
+
+    # Today's P&L if available
+    pnl_amount, pnl_pct = calculate_pnl(data)
+    if pnl_amount is not None:
+        print(f"{YELLOW}{'─' * 80}{RESET}")
+        print()
+        print(f"  {BOLD}{WHITE}TODAY'S PERFORMANCE{RESET}")
+
+        # Color based on profit/loss
+        pnl_color = GREEN if pnl_amount >= 0 else RED
+        pnl_icon = "📈" if pnl_amount >= 0 else "📉"
+        pnl_sign = "+" if pnl_amount >= 0 else ""
+
+        print(f"  {pnl_color}{BOLD}{pnl_sign}{format_currency(abs(pnl_amount))}  ({pnl_sign}{pnl_pct:.2f}%)  {pnl_icon}{RESET}")
+        print()
+
+    # Account breakdown
+    print(f"{YELLOW}{'─' * 80}{RESET}")
+    print()
+    print(f"  {BOLD}{WHITE}YOUR POSITIONS{RESET}")
+    print()
+
+    if data['crypto_positions']:
+        for pos in data['crypto_positions'][:5]:  # Show top 5
+            symbol = pos['symbol']
+            qty = pos['quantity']
+            value = pos['value']
+            print(f"  {YELLOW}•{RESET} {BOLD}{symbol}{RESET}  {qty:.8f}  {GREEN}{format_currency(value)}{RESET}")
+
+        if len(data['crypto_positions']) > 5:
+            remaining = len(data['crypto_positions']) - 5
+            print(f"  {CYAN}  ... and {remaining} more position(s){RESET}")
+    else:
+        print(f"  {YELLOW}No active positions{RESET}")
+
+    print()
+    print(f"{YELLOW}{'─' * 80}{RESET}")
+    print()
+    print(f"  {CYAN}Last Updated:{RESET} {data.get('last_update', 'Unknown')}")
+    print()
+    print(f"  {BOLD}{GREEN}✓ AUTHENTICATION SUCCESSFUL{RESET}")
+    print()
+
+    input(f"  {CYAN}Press ENTER to continue to main menu...{RESET}")
+
 def display_balance():
     """Display account balance (ATM style)"""
     print_atm_header()
@@ -311,6 +402,9 @@ def main():
         if not authenticate():
             print_exit_screen()
             return
+
+        # Show quick balance receipt after successful PIN entry
+        display_quick_balance_receipt()
 
         # Show main menu
         show_menu()
